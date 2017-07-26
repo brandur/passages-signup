@@ -17,3 +17,11 @@ go install && forego start -p 5001 web
 ```
 
 Open your browser to [localhost:5001](http://localhost:5001).
+
+## Vendoring Dependencies
+
+Dependencies are managed with govendor. New ones can be
+vendored using these commands:
+
+    go get -u github.com/kardianos/govendor
+    govendor add +external
