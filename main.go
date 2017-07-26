@@ -121,8 +121,8 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	locals := map[string]interface{}{
-		"Email":   email,
-		"Message": message,
+		"email":   email,
+		"message": message,
 	}
 	err = template.Execute(w, locals)
 	if err != nil {
