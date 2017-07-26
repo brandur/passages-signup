@@ -15,7 +15,7 @@ cd $GOPATH/src/github.com/brandur/passages-signup
 
 cp .env.sample .env
 
-# edit CSRF_SECRET and MAILGUN_API_KEY in .env
+# open .env; edit CSRF_SECRET and MAILGUN_API_KEY
 
 go install && forego start -p 5001 web
 ```
@@ -32,4 +32,6 @@ vendored using these commands:
 
 ## Operations
 
-Hosted on Heroku at `passages-signup`.
+Hosted on Heroku at [`passages-signup`][heroku].
+
+[heroku]: https://passages-signup.herokuapp.com
