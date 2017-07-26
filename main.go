@@ -57,10 +57,10 @@ func main() {
 		// to allow CSRF protection to work.
 		csrf.Secure(false)
 	}
-	CSRFMiddleware := csrf.Protect([]byte(conf.CSRFSecret))
+	csrfMiddleware := csrf.Protect([]byte(conf.CSRFSecret))
 
 	log.Printf("Listening on port %v", conf.Port)
-	log.Fatal(http.ListenAndServe(":"+conf.Port, CSRFMiddleware(r)))
+	log.Fatal(http.ListenAndServe(":"+conf.Port, csrfMiddleware(r)))
 }
 
 //

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -29,63 +30,72 @@ func TestHandleSubmit(t *testing.T) {
 	// API
 	conf.PassagesEnv = envTesting
 
-	{
-		// does not respond to non-POST
-		req := httptest.NewRequest("GET", "/submit", nil)
-		w := httptest.NewRecorder()
-		handleSubmit(w, req)
-
-		resp := w.Result()
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	testCases := []struct {
+		name       string
+		verb, path string
+		body       io.Reader
+		wantStatus int
+	}{
+		{
+			"Renders",
+			"POST", "/submit",
+			bytes.NewBufferString("email=brandur@example.com"),
+			http.StatusOK,
+		},
+		{
+			"OnlyRespondsToPOST",
+			"GET", "/submit",
+			nil,
+			http.StatusNotFound,
+		},
+		{
+			"RequiresEmail",
+			"POST", "/submit",
+			nil,
+			http.StatusUnprocessableEntity,
+		},
 	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(tc.verb, tc.path, tc.body)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			w := httptest.NewRecorder()
+			handleSubmit(w, req)
 
-	{
-		// won't handle if the email parameter is missing
-		req := httptest.NewRequest("POST", "/submit", nil)
-		w := httptest.NewRecorder()
-		handleSubmit(w, req)
+			resp := w.Result()
+			assert.Equal(t, tc.wantStatus, resp.StatusCode)
 
-		resp := w.Result()
-		assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
-	}
-
-	{
-		buf := bytes.NewBufferString("email=brandur@example.com")
-		req := httptest.NewRequest("GET", "/", buf)
-		w := httptest.NewRecorder()
-		handleShow(w, req)
-
-		resp := w.Result()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		_, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
+			_, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+		})
 	}
 }
 
 func TestInterpretMailgunError(t *testing.T) {
-	{
-		err := fmt.Errorf("test")
-		assert.Equal(t, err.Error(), interpretMailgunError(err))
-	}
-
-	{
-		err := &mailgun.UnexpectedResponseError{
-			Actual: 200,
-			Data:   []byte("test"),
-		}
-		assert.Equal(t,
+	testCases := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{
+			"BuiltIn",
+			fmt.Errorf("test"),
+			"test",
+		},
+		{
+			"UnexpectedResponse",
+			&mailgun.UnexpectedResponseError{Actual: 200, Data: []byte("test")},
 			"Got unexpected status code 200 from Mailgun. Message: test",
-			interpretMailgunError(err))
-	}
-
-	{
-		err := &mailgun.UnexpectedResponseError{
-			Actual: 200,
-			Data:   []byte(""),
-		}
-		assert.Equal(t,
+		},
+		{
+			"UnexpectedResponseWithEmptyBody",
+			&mailgun.UnexpectedResponseError{Actual: 200, Data: []byte("")},
 			"Got unexpected status code 200 from Mailgun. Message: (empty)",
-			interpretMailgunError(err))
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, interpretMailgunError(tc.err))
+		})
 	}
 }
