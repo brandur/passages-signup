@@ -1,8 +1,9 @@
 # passages-signup [![Build Status](https://travis-ci.org/brandur/passages-signup.svg?branch=master)](https://travis-ci.org/brandur/passages-signup)
 
-This is a basic signup form for my mailing list _Passages &
-Glass_. My site is otherwise statically hosted, so this
-provides a basic backend that can talk to the Mailgun API.
+A basic backend for the signup form of my newsletter
+_Passages & Glass_. The rest of its site is statically
+hosted, so this program is designed to hold an API key and
+talk to the Mailgun API.
 
 ## Setup
 
