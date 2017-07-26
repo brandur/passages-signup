@@ -39,6 +39,18 @@
 			"revisionTime": "2017-05-05T04:36:39Z"
 		},
 		{
+			"checksumSHA1": "b2zeY1R5JLmyuRe0mJ0RvP1tlCI=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "089c7181b8c728499929ff09b62d3fdd8df8adff",
+			"revisionTime": "2015-06-20T23:27:11Z"
+		},
+		{
+			"checksumSHA1": "IW/Eq1RV/1pPvJzYpRBFuAHHpE8=",
+			"path": "github.com/stretchr/testify/require",
+			"revision": "089c7181b8c728499929ff09b62d3fdd8df8adff",
+			"revisionTime": "2015-06-20T23:27:11Z"
+		},
+		{
 			"checksumSHA1": "v0cTXKbJr4rJLKQ7rruJzXC9D4s=",
 			"path": "github.com/yosssi/ace",
 			"revision": "71afeb714739f9d5f7e1849bcd4a0a5938e1a70d",
