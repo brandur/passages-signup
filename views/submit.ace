@@ -1,0 +1,8 @@
+= content main
+  #passages Passages & Glass
+  p
+    {{if eq .Message ""}}
+      | Thank you for signing up. You'll receive your first message at <strong>{{.Email}}</strong> the next time an edition of <em>Passages & Glass</em> is published.
+    {{else}}
+      | {{.Message}}
+    {{end}}

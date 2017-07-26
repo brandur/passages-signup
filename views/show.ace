@@ -1,0 +1,8 @@
+= content main
+  #passages Passages & Glass
+  form method="post" action="/submit"
+    input type="text" name="email"
+    input type="submit" value="Sign-up for newsletter"
+  p#what What is this?
+  p#about
+    | <em>Passages & Glass</em> is a sporadically sent newsletter about travel, ideas, and software written by me, <a href="https://brandur.org/about">Brandur</a>. 
