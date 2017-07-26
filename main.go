@@ -49,6 +49,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleShow)
 	r.HandleFunc("/submit", handleSubmit)
+	var handler http.Handler = r
 
 	if conf.PassagesEnv != envProduction {
 		log.Printf("Setting CSRF secure to false for non-production environment")
@@ -58,9 +59,14 @@ func main() {
 		csrf.Secure(false)
 	}
 	csrfMiddleware := csrf.Protect([]byte(conf.CSRFSecret))
+	handler = csrfMiddleware(handler)
+
+	if conf.PassagesEnv == envProduction {
+		handler = redirectToHTTPS(handler)
+	}
 
 	log.Printf("Listening on port %v", conf.Port)
-	log.Fatal(http.ListenAndServe(":"+conf.Port, csrfMiddleware(r)))
+	log.Fatal(http.ListenAndServe(":"+conf.Port, handler))
 }
 
 //
@@ -168,6 +174,21 @@ func interpretMailgunError(err error) string {
 	}
 
 	return err.Error()
+}
+
+func redirectToHTTPS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		proto := req.Header.Get("X-Forwarded-Proto")
+		if proto == "http" || proto == "HTTP" {
+			http.Redirect(res, req,
+				fmt.Sprintf("https://%s%s", req.Host, req.URL),
+				http.StatusPermanentRedirect)
+			return
+		}
+
+		next.ServeHTTP(res, req)
+
+	})
 }
 
 func renderError(w http.ResponseWriter, status int, err error) {
