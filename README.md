@@ -25,3 +25,7 @@ vendored using these commands:
 
     go get -u github.com/kardianos/govendor
     govendor add +external
+
+## Operations
+
+Hosted on Heroku at `passages-signup`.
