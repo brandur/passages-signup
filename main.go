@@ -16,6 +16,7 @@ import (
 
 const (
 	envProduction = "production"
+	envTesting    = "testing"
 	mailDomain    = "list.brandur.org"
 	mailList      = "passages@" + mailDomain
 )
@@ -108,22 +109,27 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mg := mailgun.NewMailgun(mailDomain, conf.MailgunAPIKey, "")
-	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-	err = mg.CreateMember(true, mailList, mailgun.Member{
-		Address: email,
-		Vars: map[string]interface{}{
-			"passages-signup":           true,
-			"passages-signup-timestamp": timestamp,
-		},
-	})
-
 	var message string
-	if err != nil {
-		errStr := interpretMailgunError(err)
-		log.Printf(errStr)
-		message = fmt.Sprintf("We ran into a problem adding you to the list: %v",
-			errStr)
+	if conf.PassagesEnv != envTesting {
+		mg := mailgun.NewMailgun(mailDomain, conf.MailgunAPIKey, "")
+		timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
+		err = mg.CreateMember(true, mailList, mailgun.Member{
+			Address: email,
+			Vars: map[string]interface{}{
+				"passages-signup":           true,
+				"passages-signup-timestamp": timestamp,
+			},
+		})
+
+		if err != nil {
+			errStr := interpretMailgunError(err)
+			log.Printf(errStr)
+			message = fmt.Sprintf("We ran into a problem adding you to the list: %v",
+				errStr)
+		}
+	} else {
+		message = "Skipped Mailgun access for testing"
+		log.Printf(message)
 	}
 
 	locals := map[string]interface{}{
