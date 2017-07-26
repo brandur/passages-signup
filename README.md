@@ -12,7 +12,7 @@ Clone, configure, install, and run:
 go get -u github.com/brandur/passages-signup
 cd $GOPATH/src/github.com/brandur/passages-signup
 cp .env.sample .env
-# edit MAILGUN_API_KEY in .env
+# edit CSRF_SECRET and MAILGUN_API_KEY in .env
 go install && forego start -p 5001 web
 ```
 

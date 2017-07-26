@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/csrf"
+	"github.com/gorilla/mux"
 	"github.com/joeshaw/envdecode"
 	"github.com/yosssi/ace"
 	"gopkg.in/mailgun/mailgun-go.v1"
@@ -20,6 +22,9 @@ const (
 // Conf contains configuration information for the command. It's extracted from
 // environment variables.
 type Conf struct {
+	// CSRF is a 32-byte secret used for CSRF protection.
+	CSRFSecret string `env:"CSRF_SECRET,required"`
+
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
 
@@ -39,74 +44,96 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		template, err := getTemplate("views/show")
-		if err != nil {
-			renderError(w, http.StatusInternalServerError, err)
-			return
-		}
+	r := mux.NewRouter()
+	r.HandleFunc("/", handleShow)
+	r.HandleFunc("/submit", handleSubmit)
 
-		locals := map[string]interface{}{}
-		err = template.Execute(w, locals)
-		if err != nil {
-			renderError(w, http.StatusInternalServerError, err)
-			return
-		}
-	})
-	http.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
-		// Only accept form POSTs.
-		if r.Method != "POST" {
-			http.NotFound(w, r)
-			return
-		}
+	if conf.PassagesEnv != envProduction {
+		log.Printf("Setting CSRF secure to false for non-production environment")
+		// When developing locally we're generally using HTTP and Gorilla will
+		// not set its cookie on this insecure channel. We override this here
+		// to allow CSRF protection to work.
+		csrf.Secure(false)
+	}
+	CSRFMiddleware := csrf.Protect([]byte(conf.CSRFSecret))
 
-		err := r.ParseForm()
-		if err != nil {
-			renderError(w, http.StatusBadRequest, err)
-		}
-
-		email := r.Form.Get("email")
-		if email == "" {
-			renderError(w, http.StatusUnprocessableEntity,
-				fmt.Errorf("Expected input parameter email"))
-		}
-
-		template, err := getTemplate("views/submit")
-		if err != nil {
-			renderError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		mg := mailgun.NewMailgun(mailDomain, conf.MailgunAPIKey, "")
-		err = mg.CreateMember(true, mailList, mailgun.Member{
-			Address: email,
-		})
-
-		var message string
-		if err != nil {
-			errStr := interpretMailgunError(err)
-			log.Printf(errStr)
-			message = fmt.Sprintf("We ran into a problem adding you to the list: %v",
-				errStr)
-		}
-
-		locals := map[string]interface{}{
-			"Email":   email,
-			"Message": message,
-		}
-		err = template.Execute(w, locals)
-		if err != nil {
-			// Body may have already been sent, so just respond normally.
-			log.Printf("Error rendering template: %v", err)
-			return
-		}
-	})
 	log.Printf("Listening on port %v", conf.Port)
-	log.Fatal(http.ListenAndServe(":"+conf.Port, nil))
+	log.Fatal(http.ListenAndServe(":"+conf.Port, CSRFMiddleware(r)))
 }
 
 //
-// ---
+// Handlers ---
+//
+
+func handleShow(w http.ResponseWriter, r *http.Request) {
+	template, err := getTemplate("views/show")
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	locals := map[string]interface{}{
+		// Value to render as the form's CSRF token
+		csrf.TemplateTag: csrf.TemplateField(r),
+	}
+	err = template.Execute(w, locals)
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
+		return
+	}
+}
+
+func handleSubmit(w http.ResponseWriter, r *http.Request) {
+	// Only accept form POSTs.
+	if r.Method != "POST" {
+		http.NotFound(w, r)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		renderError(w, http.StatusBadRequest, err)
+	}
+
+	email := r.Form.Get("email")
+	if email == "" {
+		renderError(w, http.StatusUnprocessableEntity,
+			fmt.Errorf("Expected input parameter email"))
+	}
+
+	template, err := getTemplate("views/submit")
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	mg := mailgun.NewMailgun(mailDomain, conf.MailgunAPIKey, "")
+	err = mg.CreateMember(true, mailList, mailgun.Member{
+		Address: email,
+	})
+
+	var message string
+	if err != nil {
+		errStr := interpretMailgunError(err)
+		log.Printf(errStr)
+		message = fmt.Sprintf("We ran into a problem adding you to the list: %v",
+			errStr)
+	}
+
+	locals := map[string]interface{}{
+		"Email":   email,
+		"Message": message,
+	}
+	err = template.Execute(w, locals)
+	if err != nil {
+		// Body may have already been sent, so just respond normally.
+		log.Printf("Error rendering template: %v", err)
+		return
+	}
+}
+
+//
+// Helpers ---
 //
 
 func getTemplate(file string) (*template.Template, error) {
