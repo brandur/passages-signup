@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
@@ -108,8 +109,13 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mg := mailgun.NewMailgun(mailDomain, conf.MailgunAPIKey, "")
+	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
 	err = mg.CreateMember(true, mailList, mailgun.Member{
 		Address: email,
+		Vars: map[string]interface{}{
+			"passages-signup":           true,
+			"passages-signup-timestamp": timestamp,
+		},
 	})
 
 	var message string
