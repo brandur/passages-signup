@@ -1,4 +1,4 @@
-# Passages Signup
+# passages-signup [![Build Status](https://travis-ci.org/brandur/passages-signup.svg?branch=master)](https://travis-ci.org/brandur/passages-signup)
 
 This is a basic signup form for my mailing list _Passages &
 Glass_. My site is otherwise statically hosted, so this
