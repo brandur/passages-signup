@@ -39,7 +39,6 @@ html lang='en'
       }
 
       #about {
-        color: #aaa;
         margin-top: 0;
       }
 
