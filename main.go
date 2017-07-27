@@ -51,14 +51,16 @@ func main() {
 	r.HandleFunc("/submit", handleSubmit)
 	var handler http.Handler = r
 
+	csrfSecure := true
 	if conf.PassagesEnv != envProduction {
 		log.Printf("Setting CSRF secure to false for non-production environment")
 		// When developing locally we're generally using HTTP and Gorilla will
 		// not set its cookie on this insecure channel. We override this here
 		// to allow CSRF protection to work.
-		csrf.Secure(false)
+		csrfSecure = false
 	}
-	csrfMiddleware := csrf.Protect([]byte(conf.CSRFSecret))
+	csrfMiddleware := csrf.Protect([]byte(conf.CSRFSecret),
+		csrf.Secure(csrfSecure))
 	handler = csrfMiddleware(handler)
 
 	if conf.PassagesEnv == envProduction {
