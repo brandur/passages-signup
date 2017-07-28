@@ -189,7 +189,6 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(res, req)
-
 	})
 }
 
