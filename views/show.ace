@@ -2,7 +2,7 @@
   #passages Passages & Glass
   form method="post" action="/submit"
     {{.csrfField}}
-    input type="text" name="email"
+    input type="text" name="email" placeholder="Email"
     input type="submit" value="Sign-up for newsletter"
   p#what What is this?
   p#about
