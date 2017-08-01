@@ -6,4 +6,4 @@
     input type="submit" value="Sign-up for newsletter"
   p#what What is this?
   p#about
-    | <em>Passages & Glass</em> is a sporadically sent newsletter about travel, ideas, and software written by <a href="https://brandur.org/about">Brandur</a>. 
+    | <em>Passages & Glass</em> is an infrequent newsletter about travel, ideas, and software written by <a href="https://brandur.org/about">Brandur</a>. 
