@@ -103,12 +103,14 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		renderError(w, http.StatusBadRequest, err)
+		return
 	}
 
 	email := r.Form.Get("email")
 	if email == "" {
 		renderError(w, http.StatusUnprocessableEntity,
 			fmt.Errorf("Expected input parameter email"))
+		return
 	}
 
 	template, err := getTemplate("views/submit")
