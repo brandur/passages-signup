@@ -59,6 +59,11 @@ html lang="en"
         text-transform: uppercase;
       }
 
+      p {
+        hyphens: auto;
+        -webkit-hyphens: auto;
+      }
+
       #about {
         margin-top: 0;
       }
