@@ -21,11 +21,12 @@ type Config struct {
     Port      uint16 `env:"SERVER_PORT,default=8080"`
 
     AWS struct {
-        ID     string `env:"AWS_ACCESS_KEY_ID"`
-        Secret string `env:"AWS_SECRET_ACCESS_KEY,required"`
+        ID        string   `env:"AWS_ACCESS_KEY_ID"`
+        Secret    string   `env:"AWS_SECRET_ACCESS_KEY,required"`
+        SnsTopics []string `env:"AWS_SNS_TOPICS"`
     }
 
-    Timeout time.Duration `env:"TIMEOUT,default=1m"`
+    Timeout time.Duration `env:"TIMEOUT,default=1m,strict"`
 }
 ```
 
@@ -41,9 +42,19 @@ var cfg Config
 err := envdecode.Decode(&cfg)
 ```
 
+If you want all fields to act `strict`, you may use `envdecode.StrictDecode`:
+
+```go
+var cfg Config
+err := envdecode.StrictDecode(&cfg)
+```
+
+All parse errors will fail fast and return an error in this mode.
+
 ## Supported types ##
 
 * Structs (and pointer to structs)
+* Slices of below defined types, separated by semicolon
 * `bool`
 * `float32`, `float64`
 * `int`, `int8`, `int16`, `int32`, `int64`
