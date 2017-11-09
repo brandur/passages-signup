@@ -36,6 +36,14 @@ type Conf struct {
 
 	// Port is the port over which to serve HTTP.
 	Port string `env:"PORT,default=5001"`
+
+	// PublicDir is the local directory out of which static content (images,
+	// stylesheets, etc.) will be served.
+	PublicDir string `env:"PUBLIC_DIR,default=./public"`
+
+	// PublicURL is the public location from which the site is being served.
+	// This is needed in some places to generate absolute URLs.
+	PublicURL string `env:"PUBLIC_URL,default=https://passages-signup.herokuapp.com"`
 }
 
 var conf Conf
@@ -49,6 +57,12 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleShow)
 	r.HandleFunc("/submit", handleSubmit)
+
+	// Serves up static files found in public/
+	r.PathPrefix("/public/").Handler(
+		http.StripPrefix("/public/", http.FileServer(http.Dir(conf.PublicDir))),
+	)
+
 	var handler http.Handler = r
 
 	csrfSecure := true
@@ -82,10 +96,10 @@ func handleShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locals := map[string]interface{}{
+	locals := getLocals(map[string]interface{}{
 		// Value to render as the form's CSRF token
 		csrf.TemplateTag: csrf.TemplateField(r),
-	}
+	})
 	err = template.Execute(w, locals)
 	if err != nil {
 		renderError(w, http.StatusInternalServerError, err)
@@ -142,10 +156,10 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		log.Printf(message)
 	}
 
-	locals := map[string]interface{}{
+	locals := getLocals(map[string]interface{}{
 		"email":   email,
 		"message": message,
-	}
+	})
 	err = template.Execute(w, locals)
 	if err != nil {
 		// Body may have already been sent, so just respond normally.
@@ -157,6 +171,21 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 //
 // Helpers ---
 //
+
+// getLocals injects a default set of local variables that are needed for
+// rendering any template and then includes in those specified in the locals
+// parameter for this particular run.
+func getLocals(locals map[string]interface{}) map[string]interface{} {
+	defaults := map[string]interface{}{
+		"publicURL": conf.PublicURL,
+	}
+
+	for k, v := range locals {
+		defaults[k] = v
+	}
+
+	return defaults
+}
 
 func getTemplate(file string) (*template.Template, error) {
 	if conf.PassagesEnv != envProduction {
