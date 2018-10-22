@@ -1,10 +1,10 @@
 language: go
 
 go:
-  - 1.9
+  - "1.11"
 
 before_install:
-  - go get -u golang.org/x/lint/golint
+  - travis_retry go get -u golang.org/x/lint/golint
 
 script:
   - go test -v &&

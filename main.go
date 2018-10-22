@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/csrf"
+	"github.com/brandur/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joeshaw/envdecode"
 	"github.com/yosssi/ace"
@@ -24,9 +24,6 @@ const (
 // Conf contains configuration information for the command. It's extracted from
 // environment variables.
 type Conf struct {
-	// CSRF is a 32-byte secret used for CSRF protection.
-	CSRFSecret string `env:"CSRF_SECRET,required"`
-
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
 
@@ -65,17 +62,18 @@ func main() {
 
 	var handler http.Handler = r
 
-	csrfSecure := true
-	if conf.PassagesEnv != envProduction {
-		log.Printf("Setting CSRF secure to false for non-production environment")
-		// When developing locally we're generally using HTTP and Gorilla will
-		// not set its cookie on this insecure channel. We override this here
-		// to allow CSRF protection to work.
-		csrfSecure = false
+	options := []csrf.Option{
+		csrf.AllowedOrigin("https://brandur.org"),
+		csrf.AllowedOrigin("https://passages-signup.herokuapp.com"),
 	}
-	csrfMiddleware := csrf.Protect([]byte(conf.CSRFSecret),
-		csrf.Secure(csrfSecure))
-	handler = csrfMiddleware(handler)
+
+	if conf.PassagesEnv != envProduction {
+		log.Printf("Allowing localhost origin for non-production environment")
+		options = append(options,
+			csrf.AllowedOrigin("http://localhost:"+conf.Port))
+
+	}
+	handler = csrf.Protect(options...)(handler)
 
 	if conf.PassagesEnv == envProduction {
 		handler = redirectToHTTPS(handler)
@@ -96,10 +94,7 @@ func handleShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locals := getLocals(map[string]interface{}{
-		// Value to render as the form's CSRF token
-		csrf.TemplateTag: csrf.TemplateField(r),
-	})
+	locals := map[string]interface{}{}
 	err = template.Execute(w, locals)
 	if err != nil {
 		renderError(w, http.StatusInternalServerError, err)
