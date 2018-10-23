@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/brandur/csrf"
+  packages = ["."]
+  revision = "fb0ef0558bdc7ed27180cbfa8d1197d2f4ece4f4"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -14,22 +20,10 @@
   version = "v1.1"
 
 [[projects]]
-  name = "github.com/gorilla/csrf"
-  packages = ["."]
-  revision = "69581736821c33d85bbf378f42f6ad864dbd85de"
-  version = "v1.5"
-
-[[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
   revision = "bcd8bc72b08df0f70df986b97f95590779502d31"
   version = "v1.4.0"
-
-[[projects]]
-  name = "github.com/gorilla/securecookie"
-  packages = ["."]
-  revision = "667fe4e3466a040b780561fe9b51a83a3753eefc"
-  version = "v1.1"
 
 [[projects]]
   branch = "master"
@@ -70,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b3bc296657bac86d22c48e0a6189b7a6f2a391ad27c968e878a75475d6947c53"
+  inputs-digest = "d44e469d074a6517834bff9913b1a530460b33206cc3a71a2c814b470000edc4"
   solver-name = "gps-cdcl"
   solver-version = 1
