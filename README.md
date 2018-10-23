@@ -16,7 +16,7 @@ cd $GOPATH/src/github.com/brandur/passages-signup
 
 cp .env.sample .env
 
-# open .env; edit CSRF_SECRET and MAILGUN_API_KEY
+# open .env; edit MAILGUN_API_KEY
 
 go install && forego start -p 5001 web
 ```
