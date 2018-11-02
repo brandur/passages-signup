@@ -102,12 +102,10 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		mailAPI := getMailAPI()
-
 		var res *SignupFinisherResult
 		WithTransaction(db, func(tx *sql.Tx) error {
 			mediator := &SignupFinisher{
-				MailAPI: mailAPI,
+				MailAPI: getMailAPI(),
 				Token:   token,
 			}
 
@@ -169,13 +167,11 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		mailAPI := getMailAPI()
-
 		var res *SignupStarterResult
 		WithTransaction(db, func(tx *sql.Tx) error {
 			mediator := &SignupStarter{
 				Email:   email,
-				MailAPI: mailAPI,
+				MailAPI: getMailAPI(),
 			}
 
 			var err error
