@@ -111,7 +111,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := mediator.Run()
 
-	template, err := getTemplate("views/submit")
+	template, err := getTemplate("views/message")
 	if err != nil {
 		renderError(w, http.StatusInternalServerError, err)
 		return
@@ -176,7 +176,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 	email = strings.TrimSpace(email)
 
-	template, err := getTemplate("views/submit")
+	template, err := getTemplate("views/message")
 	if err != nil {
 		renderError(w, http.StatusInternalServerError, err)
 		return
