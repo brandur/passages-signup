@@ -29,3 +29,22 @@ func ResetDB(t *testing.T, db *sql.DB) {
 	_, err := db.Exec(`TRUNCATE TABLE signup`)
 	assert.NoError(t, err)
 }
+
+// WithTestTransaction is similar to WithTransaction except that it always
+// rolls back the transaction. This is useful in test environments where we
+// want to discard all results within a single test case.
+func WithTestTransaction(t *testing.T, db *sql.DB, fn func(*sql.Tx)) {
+	tx, err := db.Begin()
+	assert.NoError(t, err)
+
+	defer func() {
+		if p := recover(); p != nil {
+			err := tx.Rollback()
+			assert.NoError(t, err)
+			panic(p)
+		} else {
+			err := tx.Rollback()
+			assert.NoError(t, err)
+		}
+	}()
+}

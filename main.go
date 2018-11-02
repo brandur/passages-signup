@@ -96,6 +96,13 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
+	template, err := getTemplate("views/message")
+	if err != nil {
+		renderError(w, http.StatusInternalServerError,
+			errors.Wrap(err, "Failed to compile template"))
+		return
+	}
+
 	db, err := sql.Open("postgres", conf.DatabaseURL)
 	if err != nil {
 		renderError(w, http.StatusInternalServerError, err)
@@ -104,18 +111,17 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 
 	mailAPI := getMailAPI()
 
-	mediator := &SignupFinisher{
-		DB:      db,
-		MailAPI: mailAPI,
-		Token:   token,
-	}
-	res, err := mediator.Run()
+	var res *SignupFinisherResult
+	WithTransaction(db, func(tx *sql.Tx) error {
+		mediator := &SignupFinisher{
+			MailAPI: mailAPI,
+			Token:   token,
+		}
 
-	template, err := getTemplate("views/message")
-	if err != nil {
-		renderError(w, http.StatusInternalServerError, err)
-		return
-	}
+		var err error
+		res, err = mediator.Run(tx)
+		return err
+	})
 
 	var message string
 	if err != nil {
@@ -178,7 +184,8 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 	template, err := getTemplate("views/message")
 	if err != nil {
-		renderError(w, http.StatusInternalServerError, err)
+		renderError(w, http.StatusInternalServerError,
+			errors.Wrap(err, "Failed to compile template"))
 		return
 	}
 
@@ -190,12 +197,17 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 	mailAPI := getMailAPI()
 
-	mediator := &SignupStarter{
-		DB:      db,
-		Email:   email,
-		MailAPI: mailAPI,
-	}
-	res, err := mediator.Run()
+	var res *SignupStarterResult
+	WithTransaction(db, func(tx *sql.Tx) error {
+		mediator := &SignupStarter{
+			Email:   email,
+			MailAPI: mailAPI,
+		}
+
+		var err error
+		res, err = mediator.Run(tx)
+		return err
+	})
 
 	var message string
 	if err != nil {

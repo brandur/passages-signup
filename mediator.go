@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"regexp"
 	"time"
 
@@ -30,33 +29,15 @@ var (
 // fully adds it to the mailing list. It does this based on Token, which is
 // received through a secret URL.
 type SignupFinisher struct {
-	DB      *sql.DB
 	MailAPI MailAPI
 	Token   string
 }
 
 // Run executes the mediator.
-func (c *SignupFinisher) Run() (res *SignupFinisherResult, resErr error) {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		resErr = errors.Wrap(err, "Failed to start transaction")
-		return
-	}
-
-	defer func() {
-		if resErr == nil {
-			resErr = tx.Commit()
-		} else {
-			err := tx.Rollback()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Rollback error = %+v\n", err)
-			}
-		}
-	}()
-
+func (c *SignupFinisher) Run(tx *sql.Tx) (res *SignupFinisherResult, resErr error) {
 	var id *int64
 	var email *string
-	err = tx.QueryRow(`
+	err := tx.QueryRow(`
 		SELECT id, email
 		FROM signup
 		WHERE token = $1
@@ -120,30 +101,12 @@ type SignupFinisherResult struct {
 // was dispatched but not yet confirmed, it may be resent, but only if outside
 // a rate limited window.
 type SignupStarter struct {
-	DB      *sql.DB
 	Email   string
 	MailAPI MailAPI
 }
 
 // Run executes the mediator.
-func (c *SignupStarter) Run() (res *SignupStarterResult, resErr error) {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		resErr = errors.Wrap(err, "Failed to start transaction")
-		return
-	}
-
-	defer func() {
-		if resErr == nil {
-			resErr = tx.Commit()
-		} else {
-			err := tx.Rollback()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Rollback error = %+v\n", err)
-			}
-		}
-	}()
-
+func (c *SignupStarter) Run(tx *sql.Tx) (res *SignupStarterResult, resErr error) {
 	// We know that a simple regexp validation won't detect all invalid email
 	// addresses, so to some extent we'll be relying on Mailgun to do some of
 	// that work for us.
@@ -155,7 +118,7 @@ func (c *SignupStarter) Run() (res *SignupStarterResult, resErr error) {
 	var id *int64
 	var lastSentAt, completedAt *time.Time
 	var token *string
-	err = tx.QueryRow(`
+	err := tx.QueryRow(`
 		SELECT id, completed_at, last_sent_at, token
 		FROM signup
 		WHERE email = $1
