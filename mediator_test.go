@@ -79,7 +79,6 @@ func TestSignupStarter(t *testing.T) {
 	// New signup
 	t.Run("NewSignup", func(t *testing.T) {
 		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
-
 			mailAPI := NewFakeMailAPI()
 			mediator := signupStarter(mailAPI, testhelpers.TestEmail)
 

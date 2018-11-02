@@ -34,7 +34,7 @@ type SignupFinisher struct {
 }
 
 // Run executes the mediator.
-func (c *SignupFinisher) Run(tx *sql.Tx) (res *SignupFinisherResult, resErr error) {
+func (c *SignupFinisher) Run(tx *sql.Tx) (*SignupFinisherResult, error) {
 	var id *int64
 	var email *string
 	err := tx.QueryRow(`
@@ -45,14 +45,12 @@ func (c *SignupFinisher) Run(tx *sql.Tx) (res *SignupFinisherResult, resErr erro
 
 	// No such token.
 	if err == sql.ErrNoRows {
-		res = &SignupFinisherResult{TokenNotFound: true}
-		return
+		return &SignupFinisherResult{TokenNotFound: true}, nil
 	}
 
 	// Handle all other database-related errors.
 	if err != nil {
-		resErr = errors.Wrap(err, "Failed to query for token")
-		return
+		return nil, errors.Wrap(err, "Failed to query for token")
 	}
 
 	// Make sure to update the row to indicate that we've successfully
@@ -66,19 +64,16 @@ func (c *SignupFinisher) Run(tx *sql.Tx) (res *SignupFinisherResult, resErr erro
 		WHERE id = $1
 	`, *id)
 	if err != nil {
-		resErr = errors.Wrap(err, "Failed to update existing record")
-		return
+		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
 
 	fmt.Printf("Adding %v to the list\n", *email)
 	err = c.MailAPI.AddMember(mailList, *email)
 	if err != nil {
-		resErr = errors.Wrap(err, "Failed to add email to list")
-		return
+		return nil, errors.Wrap(err, "Failed to add email to list")
 	}
 
-	res = &SignupFinisherResult{Email: *email, SignupFinished: true}
-	return
+	return &SignupFinisherResult{Email: *email, SignupFinished: true}, nil
 }
 
 // SignupFinisherResult holds the results of a successful run of
@@ -106,13 +101,12 @@ type SignupStarter struct {
 }
 
 // Run executes the mediator.
-func (c *SignupStarter) Run(tx *sql.Tx) (res *SignupStarterResult, resErr error) {
+func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 	// We know that a simple regexp validation won't detect all invalid email
 	// addresses, so to some extent we'll be relying on Mailgun to do some of
 	// that work for us.
 	if !emailRegexp.MatchString(c.Email) {
-		resErr = ErrInvalidEmail
-		return
+		return nil, ErrInvalidEmail
 	}
 
 	var id *int64
@@ -129,8 +123,7 @@ func (c *SignupStarter) Run(tx *sql.Tx) (res *SignupStarterResult, resErr error)
 	if err == sql.ErrNoRows {
 		tokenStruct, err := uuid.NewV4()
 		if err != nil {
-			resErr = errors.Wrap(err, "Failed to generate UUID")
-			return
+			return nil, errors.Wrap(err, "Failed to generate UUID")
 		}
 
 		token := tokenStruct.String()
@@ -142,30 +135,25 @@ func (c *SignupStarter) Run(tx *sql.Tx) (res *SignupStarterResult, resErr error)
 				($1, $2)
 		`, c.Email, token)
 		if err != nil {
-			resErr = errors.Wrap(err, "Failed to insert new signup row")
-			return
+			return nil, errors.Wrap(err, "Failed to insert new signup row")
 		}
 
 		err = c.sendConfirmationMessage(token)
 		if err != nil {
-			resErr = errors.Wrap(err, "Failed to send confirmation message")
-			return
+			return nil, errors.Wrap(err, "Failed to send confirmation message")
 		}
 
-		res = &SignupStarterResult{NewSignup: true}
-		return
+		return &SignupStarterResult{NewSignup: true}, nil
 	}
 
 	// Handle all other database-related errors.
 	if err != nil {
-		resErr = errors.Wrap(err, "Failed to query for existing record")
-		return
+		return nil, errors.Wrap(err, "Failed to query for existing record")
 	}
 
 	// If the signup process is already fully completed, we're done.
 	if completedAt != nil {
-		res = &SignupStarterResult{AlreadySubscribed: true}
-		return
+		return &SignupStarterResult{AlreadySubscribed: true}, nil
 	}
 
 	// If we sent the last confirmation email recently, then don't send it
@@ -177,8 +165,7 @@ func (c *SignupStarter) Run(tx *sql.Tx) (res *SignupStarterResult, resErr error)
 	// The duration parameter may need to be tweaked.
 	if (*lastSentAt).After(time.Now().Add(-24 * time.Hour)) {
 		fmt.Printf("Last send was too soon so not re-sending confirmation")
-		res = &SignupStarterResult{ConfirmationRateLimited: true}
-		return
+		return &SignupStarterResult{ConfirmationRateLimited: true}, nil
 	}
 
 	// Otherwise, update the timestamp and re-send the confirmation message.
@@ -188,19 +175,16 @@ func (c *SignupStarter) Run(tx *sql.Tx) (res *SignupStarterResult, resErr error)
 		WHERE id = $1
 	`, *id)
 	if err != nil {
-		resErr = errors.Wrap(err, "Failed to update existing record")
-		return
+		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
 
 	// Re-send confirmation.
 	err = c.sendConfirmationMessage(*token)
 	if err != nil {
-		resErr = errors.Wrap(err, "Failed to send confirmation email")
-		return
+		return nil, errors.Wrap(err, "Failed to send confirmation email")
 	}
 
-	res = &SignupStarterResult{ConfirmationResent: true}
-	return
+	return &SignupStarterResult{ConfirmationResent: true}, nil
 }
 
 func (c *SignupStarter) sendConfirmationMessage(token string) error {
