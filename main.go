@@ -249,13 +249,16 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 	})
 }
 
-func renderError(w http.ResponseWriter, status int, err error) {
+func renderError(w http.ResponseWriter, status int, renderErr error) {
 	w.WriteHeader(status)
-	message := fmt.Sprintf("Error %v", status)
+
+	err := renderTemplate(w, "views/error", getLocals(map[string]interface{}{
+		"error": renderErr.Error(),
+	}))
 	if err != nil {
-		message = fmt.Sprintf("%v: %v", message, err.Error())
+		// Hopefully it never comes to this
+		log.Printf("Error during error handling: %v", err)
 	}
-	w.Write([]byte(message))
 }
 
 // Shortcut for rendering a template and doing the right associated error

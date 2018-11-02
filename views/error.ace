@@ -1,0 +1,5 @@
+= content main
+  #passages Passages & Glass
+  p Unfortunately, an error occurred. If this problem persists, please email <strong>brandur@brandur.org</strong>.
+  p
+    {{HTML .error}}
