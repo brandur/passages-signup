@@ -17,8 +17,6 @@ import (
 const (
 	envProduction = "production"
 	envTesting    = "testing"
-	mailDomain    = "list.brandur.org"
-	mailList      = "passages@" + mailDomain
 )
 
 // Conf contains configuration information for the command. It's extracted from
