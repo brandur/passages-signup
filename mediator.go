@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,11 +29,23 @@ type SignupFinisher struct {
 }
 
 // Run executes the mediator.
-func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
+func (c *SignupFinisher) Run() (res *SignupFinisherResult, resErr error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to start transaction")
+		resErr = errors.Wrap(err, "Failed to start transaction")
+		return
 	}
+
+	defer func() {
+		if resErr == nil {
+			resErr = tx.Commit()
+		} else {
+			err := tx.Rollback()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Rollback error = %+v\n", err)
+			}
+		}
+	}()
 
 	var id *int64
 	var email *string
@@ -44,13 +57,14 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 
 	// No such token.
 	if err == sql.ErrNoRows {
-		return &SignupFinisherResult{TokenNotFound: true}, tx.Commit()
+		res = &SignupFinisherResult{TokenNotFound: true}
+		return
 	}
 
 	// Handle all other database-related errors.
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "Failed to query for token")
+		resErr = errors.Wrap(err, "Failed to query for token")
+		return
 	}
 
 	// Make sure to update the row to indicate that we've successfully
@@ -64,18 +78,19 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 		WHERE id = $1
 	`, *id)
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "Failed to update existing record")
+		resErr = errors.Wrap(err, "Failed to update existing record")
+		return
 	}
 
 	fmt.Printf("Adding %v to the list\n", *email)
 	err = c.MailAPI.AddMember(mailList, *email)
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "Failed to add email to list")
+		resErr = errors.Wrap(err, "Failed to add email to list")
+		return
 	}
 
-	return &SignupFinisherResult{Email: *email, SignupFinished: true}, tx.Commit()
+	res = &SignupFinisherResult{Email: *email, SignupFinished: true}
+	return
 }
 
 // SignupFinisherResult holds the results of a successful run of
@@ -104,11 +119,23 @@ type SignupStarter struct {
 }
 
 // Run executes the mediator.
-func (c *SignupStarter) Run() (*SignupStarterResult, error) {
+func (c *SignupStarter) Run() (res *SignupStarterResult, resErr error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to start transaction")
+		resErr = errors.Wrap(err, "Failed to start transaction")
+		return
 	}
+
+	defer func() {
+		if resErr == nil {
+			resErr = tx.Commit()
+		} else {
+			err := tx.Rollback()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Rollback error = %+v\n", err)
+			}
+		}
+	}()
 
 	var id *int64
 	var lastSentAt, completedAt *time.Time
@@ -124,7 +151,8 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 	if err == sql.ErrNoRows {
 		tokenStruct, err := uuid.NewV4()
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to generate UUID")
+			resErr = errors.Wrap(err, "Failed to generate UUID")
+			return
 		}
 
 		token := tokenStruct.String()
@@ -136,27 +164,30 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 				($1, $2)
 		`, c.Email, token)
 		if err != nil {
-			tx.Rollback()
-			return nil, errors.Wrap(err, "Failed to insert new signup row")
+			resErr = errors.Wrap(err, "Failed to insert new signup row")
+			return
 		}
 
 		err = c.sendConfirmationMessage(token)
 		if err != nil {
-			tx.Rollback()
-			return nil, errors.Wrap(err, "Failed to send confirmation message")
+			resErr = errors.Wrap(err, "Failed to send confirmation message")
+			return
 		}
 
-		return &SignupStarterResult{NewSignup: true}, tx.Commit()
+		res = &SignupStarterResult{NewSignup: true}
+		return
 	}
 
 	// Handle all other database-related errors.
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to query for existing record")
+		resErr = errors.Wrap(err, "Failed to query for existing record")
+		return
 	}
 
 	// If the signup process is already fully completed, we're done.
 	if completedAt != nil {
-		return &SignupStarterResult{AlreadySubscribed: true}, tx.Commit()
+		res = &SignupStarterResult{AlreadySubscribed: true}
+		return
 	}
 
 	// If we sent the last confirmation email recently, then don't send it
@@ -168,7 +199,8 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 	// The duration parameter may need to be tweaked.
 	if (*lastSentAt).After(time.Now().Add(-24 * time.Hour)) {
 		fmt.Printf("Last send was too soon so not re-sending confirmation")
-		return &SignupStarterResult{ConfirmationRateLimited: true}, tx.Commit()
+		res = &SignupStarterResult{ConfirmationRateLimited: true}
+		return
 	}
 
 	// Otherwise, update the timestamp and re-send the confirmation message.
@@ -178,18 +210,19 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 		WHERE id = $1
 	`, *id)
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "Failed to update existing record")
+		resErr = errors.Wrap(err, "Failed to update existing record")
+		return
 	}
 
 	// Re-send confirmation.
 	err = c.sendConfirmationMessage(*token)
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "Failed to send confirmation email")
+		resErr = errors.Wrap(err, "Failed to send confirmation email")
+		return
 	}
 
-	return &SignupStarterResult{ConfirmationResent: true}, tx.Commit()
+	res = &SignupStarterResult{ConfirmationResent: true}
+	return
 }
 
 func (c *SignupStarter) sendConfirmationMessage(token string) error {
