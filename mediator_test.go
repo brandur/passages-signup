@@ -4,16 +4,16 @@ import (
 	"database/sql"
 	"testing"
 
-	_ "github.com/lib/pq"
+	"github.com/brandur/passages-signup/testhelpers"
 	assert "github.com/stretchr/testify/require"
 )
 
 func TestSignupFinisher(t *testing.T) {
-	db := connectDB(t)
+	db := testhelpers.ConnectDB(t)
 
 	// Normal signup finish
 	t.Run("FinishSignup", func(t *testing.T) {
-		resetDB(t, db)
+		testhelpers.ResetDB(t, db)
 
 		token := "test-token"
 
@@ -23,7 +23,7 @@ func TestSignupFinisher(t *testing.T) {
 				(email, token)
 			VALUES
 				($1, $2)
-		`, testEmail, token)
+		`, testhelpers.TestEmail, token)
 		assert.NoError(t, err)
 
 		mailAPI := NewFakeMailAPI()
@@ -32,12 +32,12 @@ func TestSignupFinisher(t *testing.T) {
 		res, err := mediator.Run()
 		assert.NoError(t, err)
 
-		assert.Equal(t, testEmail, res.Email)
+		assert.Equal(t, testhelpers.TestEmail, res.Email)
 		assert.True(t, res.SignupFinished)
 		assert.False(t, res.TokenNotFound)
 
 		assert.Equal(t, 1, len(mailAPI.MembersAdded))
-		assert.Equal(t, testEmail, mailAPI.MembersAdded[0].Email)
+		assert.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[0].Email)
 
 		//
 		// Make sure it's idempotent by running it immediately again with the
@@ -47,17 +47,17 @@ func TestSignupFinisher(t *testing.T) {
 		res, err = mediator.Run()
 		assert.NoError(t, err)
 
-		assert.Equal(t, testEmail, res.Email)
+		assert.Equal(t, testhelpers.TestEmail, res.Email)
 		assert.True(t, res.SignupFinished)
 		assert.False(t, res.TokenNotFound)
 
 		assert.Equal(t, 2, len(mailAPI.MembersAdded))
-		assert.Equal(t, testEmail, mailAPI.MembersAdded[1].Email)
+		assert.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[1].Email)
 	})
 
 	// Unknown token
 	t.Run("UnknownToken", func(t *testing.T) {
-		resetDB(t, db)
+		testhelpers.ResetDB(t, db)
 		mailAPI := NewFakeMailAPI()
 		mediator := signupFinisher(db, mailAPI, "not-a-token")
 
@@ -73,14 +73,14 @@ func TestSignupFinisher(t *testing.T) {
 }
 
 func TestSignupStarter(t *testing.T) {
-	db := connectDB(t)
+	db := testhelpers.ConnectDB(t)
 
 	// New signup
 	t.Run("NewSignup", func(t *testing.T) {
-		resetDB(t, db)
+		testhelpers.ResetDB(t, db)
 
 		mailAPI := NewFakeMailAPI()
-		mediator := signupStarter(db, mailAPI, testEmail)
+		mediator := signupStarter(db, mailAPI, testhelpers.TestEmail)
 
 		res, err := mediator.Run()
 		assert.NoError(t, err)
@@ -91,12 +91,12 @@ func TestSignupStarter(t *testing.T) {
 		assert.True(t, res.NewSignup)
 
 		assert.Equal(t, 1, len(mailAPI.MessagesSent))
-		assert.Equal(t, testEmail, mailAPI.MessagesSent[0].Email)
+		assert.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Email)
 	})
 
 	// Email that's already subscribed
 	t.Run("AlreadySubscribed", func(t *testing.T) {
-		resetDB(t, db)
+		testhelpers.ResetDB(t, db)
 
 		// Manually insert a finished record
 		_, err := db.Exec(`
@@ -104,11 +104,11 @@ func TestSignupStarter(t *testing.T) {
 				(email, token, completed_at)
 			VALUES
 				($1, 'not-a-real-token', NOW())
-		`, testEmail)
+		`, testhelpers.TestEmail)
 		assert.NoError(t, err)
 
 		mailAPI := NewFakeMailAPI()
-		mediator := signupStarter(db, mailAPI, testEmail)
+		mediator := signupStarter(db, mailAPI, testhelpers.TestEmail)
 
 		res, err := mediator.Run()
 		assert.NoError(t, err)
@@ -123,7 +123,7 @@ func TestSignupStarter(t *testing.T) {
 
 	// Email already in progress, but with signup not completed
 	t.Run("ConfirmationResent", func(t *testing.T) {
-		resetDB(t, db)
+		testhelpers.ResetDB(t, db)
 
 		// Manually insert a finished record
 		_, err := db.Exec(`
@@ -131,11 +131,11 @@ func TestSignupStarter(t *testing.T) {
 				(email, token, last_sent_at)
 			VALUES
 				($1, 'not-a-real-token', NOW() - '1 month'::interval)
-		`, testEmail)
+		`, testhelpers.TestEmail)
 		assert.NoError(t, err)
 
 		mailAPI := NewFakeMailAPI()
-		mediator := signupStarter(db, mailAPI, testEmail)
+		mediator := signupStarter(db, mailAPI, testhelpers.TestEmail)
 
 		res, err := mediator.Run()
 		assert.NoError(t, err)
@@ -146,12 +146,12 @@ func TestSignupStarter(t *testing.T) {
 		assert.False(t, res.NewSignup)
 
 		assert.Equal(t, 1, len(mailAPI.MessagesSent))
-		assert.Equal(t, testEmail, mailAPI.MessagesSent[0].Email)
+		assert.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Email)
 	})
 
 	// Email already in progress, but too soon after last attempt
 	t.Run("ConfirmationRateLimited", func(t *testing.T) {
-		resetDB(t, db)
+		testhelpers.ResetDB(t, db)
 
 		// Manually insert a finished record
 		_, err := db.Exec(`
@@ -159,11 +159,11 @@ func TestSignupStarter(t *testing.T) {
 				(email, token, last_sent_at)
 			VALUES
 				($1, 'not-a-real-token', NOW() - '1 hour'::interval)
-		`, testEmail)
+		`, testhelpers.TestEmail)
 		assert.NoError(t, err)
 
 		mailAPI := NewFakeMailAPI()
-		mediator := signupStarter(db, mailAPI, testEmail)
+		mediator := signupStarter(db, mailAPI, testhelpers.TestEmail)
 
 		res, err := mediator.Run()
 		assert.NoError(t, err)
@@ -178,28 +178,8 @@ func TestSignupStarter(t *testing.T) {
 }
 
 //
-// Private constants
-//
-
-const (
-	databaseURL = "postgres://localhost/passages-signup-test?sslmode=disable"
-	testEmail   = "foo@example.com"
-)
-
-//
 // Private functions
 //
-
-func connectDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("postgres", databaseURL)
-	assert.NoError(t, err)
-	return db
-}
-
-func resetDB(t *testing.T, db *sql.DB) {
-	_, err := db.Exec(`TRUNCATE TABLE signup`)
-	assert.NoError(t, err)
-}
 
 func signupFinisher(db *sql.DB, mailAPI MailAPI, token string) *SignupFinisher {
 	return &SignupFinisher{

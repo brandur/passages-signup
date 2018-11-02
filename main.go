@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/brandur/csrf"
 	"github.com/gorilla/mux"
@@ -172,6 +173,8 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 			fmt.Errorf("Expected input parameter email"))
 		return
 	}
+
+	email = strings.TrimSpace(email)
 
 	template, err := getTemplate("views/submit")
 	if err != nil {

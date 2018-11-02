@@ -14,6 +14,9 @@ CREATE TABLE signup (
     token        VARCHAR(100) NOT NULL UNIQUE
 );
 
+CREATE UNIQUE INDEX signup_email
+    ON signup (email);
+
 CREATE INDEX signup_last_sent_at
     ON signup (last_sent_at)
     WHERE last_sent_at IS NOT NULL;
