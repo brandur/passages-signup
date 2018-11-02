@@ -96,13 +96,6 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	template, err := getTemplate("views/message")
-	if err != nil {
-		renderError(w, http.StatusInternalServerError,
-			errors.Wrap(err, "Failed to compile template"))
-		return
-	}
-
 	db, err := sql.Open("postgres", conf.DatabaseURL)
 	if err != nil {
 		renderError(w, http.StatusInternalServerError, err)
@@ -134,30 +127,13 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 		message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
 	}
 
-	locals := getLocals(map[string]interface{}{
+	renderTemplate(w, "views/message", getLocals(map[string]interface{}{
 		"message": message,
-	})
-	err = template.Execute(w, locals)
-	if err != nil {
-		// Body may have already been sent, so just respond normally.
-		log.Printf("Error rendering template: %v", err)
-		return
-	}
+	}))
 }
 
 func handleShow(w http.ResponseWriter, r *http.Request) {
-	template, err := getTemplate("views/show")
-	if err != nil {
-		renderError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	locals := map[string]interface{}{}
-	err = template.Execute(w, locals)
-	if err != nil {
-		renderError(w, http.StatusInternalServerError, err)
-		return
-	}
+	renderTemplate(w, "views/show", map[string]interface{}{})
 }
 
 func handleSubmit(w http.ResponseWriter, r *http.Request) {
@@ -181,13 +157,6 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	email = strings.TrimSpace(email)
-
-	template, err := getTemplate("views/message")
-	if err != nil {
-		renderError(w, http.StatusInternalServerError,
-			errors.Wrap(err, "Failed to compile template"))
-		return
-	}
 
 	db, err := sql.Open("postgres", conf.DatabaseURL)
 	if err != nil {
@@ -221,15 +190,9 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		message = fmt.Sprintf("Thank you for signing up. We've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
 	}
 
-	locals := getLocals(map[string]interface{}{
+	renderTemplate(w, "views/message", getLocals(map[string]interface{}{
 		"message": message,
-	})
-	err = template.Execute(w, locals)
-	if err != nil {
-		// Body may have already been sent, so just respond normally.
-		log.Printf("Error rendering template: %v", err)
-		return
-	}
+	}))
 }
 
 //
@@ -290,4 +253,24 @@ func renderError(w http.ResponseWriter, status int, err error) {
 		message = fmt.Sprintf("%v: %v", message, err.Error())
 	}
 	w.Write([]byte(message))
+}
+
+// Shortcut for rendering a template and doing the right associated error
+// handling.
+func renderTemplate(w http.ResponseWriter, file string, locals map[string]interface{}) {
+	template, err := getTemplate(file)
+	if err != nil {
+		renderError(w, http.StatusInternalServerError,
+			errors.Wrap(err, "Failed to compile template"))
+		return
+	}
+
+	err = template.Execute(w, locals)
+	if err != nil {
+		err = errors.Wrap(err, "Failed to render template")
+
+		// Body may have already been sent, so just respond normally.
+		log.Printf("Error: %v", err)
+		return
+	}
 }
