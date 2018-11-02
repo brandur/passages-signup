@@ -93,106 +93,113 @@ func main() {
 //
 
 func handleConfirm(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	token := vars["token"]
+	withErrorHandling(w, func() error {
+		vars := mux.Vars(r)
+		token := vars["token"]
 
-	db, err := sql.Open("postgres", conf.DatabaseURL)
-	if err != nil {
-		renderError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	mailAPI := getMailAPI()
-
-	var res *SignupFinisherResult
-	WithTransaction(db, func(tx *sql.Tx) error {
-		mediator := &SignupFinisher{
-			MailAPI: mailAPI,
-			Token:   token,
+		db, err := sql.Open("postgres", conf.DatabaseURL)
+		if err != nil {
+			return err
 		}
 
-		var err error
-		res, err = mediator.Run(tx)
-		return err
+		mailAPI := getMailAPI()
+
+		var res *SignupFinisherResult
+		WithTransaction(db, func(tx *sql.Tx) error {
+			mediator := &SignupFinisher{
+				MailAPI: mailAPI,
+				Token:   token,
+			}
+
+			var err error
+			res, err = mediator.Run(tx)
+			return err
+		})
+
+		var message string
+		if err != nil {
+			return errors.Wrap(err, "Encountered a problem finishing signup")
+		}
+
+		if res.TokenNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			message = "We couldn't find that confirmation token."
+		} else {
+			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
+		}
+
+		return renderTemplate(w, "views/message", getLocals(map[string]interface{}{
+			"message": message,
+		}))
 	})
-
-	var message string
-	if err != nil {
-		err = errors.Wrap(err, "Encountered a problem finishing signup")
-		message = err.Error()
-	} else if res.TokenNotFound {
-		w.WriteHeader(http.StatusNotFound)
-		message = "We couldn't find that confirmation token."
-	} else {
-		message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
-	}
-
-	renderTemplate(w, "views/message", getLocals(map[string]interface{}{
-		"message": message,
-	}))
 }
 
 func handleShow(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "views/show", map[string]interface{}{})
+	withErrorHandling(w, func() error {
+		return renderTemplate(w, "views/show", map[string]interface{}{})
+	})
 }
 
 func handleSubmit(w http.ResponseWriter, r *http.Request) {
-	// Only accept form POSTs.
-	if r.Method != "POST" {
-		http.NotFound(w, r)
-		return
-	}
-
-	err := r.ParseForm()
-	if err != nil {
-		renderError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	email := r.Form.Get("email")
-	if email == "" {
-		renderError(w, http.StatusUnprocessableEntity,
-			fmt.Errorf("Expected input parameter email"))
-		return
-	}
-
-	email = strings.TrimSpace(email)
-
-	db, err := sql.Open("postgres", conf.DatabaseURL)
-	if err != nil {
-		renderError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	mailAPI := getMailAPI()
-
-	var res *SignupStarterResult
-	WithTransaction(db, func(tx *sql.Tx) error {
-		mediator := &SignupStarter{
-			Email:   email,
-			MailAPI: mailAPI,
+	withErrorHandling(w, func() error {
+		// Only accept form POSTs.
+		if r.Method != "POST" {
+			http.NotFound(w, r)
+			return nil
 		}
 
-		var err error
-		res, err = mediator.Run(tx)
-		return err
+		err := r.ParseForm()
+		if err != nil {
+			renderError(w, http.StatusBadRequest,
+				errors.Wrap(err, "Unable to parse input form"))
+			return nil
+		}
+
+		email := r.Form.Get("email")
+		if email == "" {
+			renderError(w, http.StatusUnprocessableEntity,
+				fmt.Errorf("Expected input parameter email"))
+			return nil
+		}
+
+		email = strings.TrimSpace(email)
+
+		db, err := sql.Open("postgres", conf.DatabaseURL)
+		if err != nil {
+			return err
+		}
+
+		mailAPI := getMailAPI()
+
+		var res *SignupStarterResult
+		WithTransaction(db, func(tx *sql.Tx) error {
+			mediator := &SignupStarter{
+				Email:   email,
+				MailAPI: mailAPI,
+			}
+
+			var err error
+			res, err = mediator.Run(tx)
+			return err
+		})
+
+		var message string
+		if err != nil {
+			return errors.Wrap(err, "Encountered a problem sending a confirmation email")
+		}
+
+		if res.AlreadySubscribed {
+			message = fmt.Sprintf("<strong>%s</strong> is already subscribed to <em>Passages & Glass</em>. Thank you for signing up!", email)
+		} else if res.ConfirmationRateLimited {
+			message = fmt.Sprintf("Thank you for signing up. We recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon. Please try to find the message and click the enclosed link to finish signing up for <em>Passages & Glass</em> (check your spam folder if you can't find it).", email)
+		} else {
+			message = fmt.Sprintf("Thank you for signing up. We've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
+		}
+
+		return renderTemplate(w, "views/message", getLocals(map[string]interface{}{
+			"message": message,
+		}))
 	})
-
-	var message string
-	if err != nil {
-		err = errors.Wrap(err, "Encountered a problem sending a confirmation email")
-		message = err.Error()
-	} else if res.AlreadySubscribed {
-		message = fmt.Sprintf("<strong>%s</strong> is already subscribed to <em>Passages & Glass</em>. Thank you for signing up!", email)
-	} else if res.ConfirmationRateLimited {
-		message = fmt.Sprintf("Thank you for signing up. We recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon. Please try to find the message and click the enclosed link to finish signing up for <em>Passages & Glass</em> (check your spam folder if you can't find it).", email)
-	} else {
-		message = fmt.Sprintf("Thank you for signing up. We've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
-	}
-
-	renderTemplate(w, "views/message", getLocals(map[string]interface{}{
-		"message": message,
-	}))
 }
 
 //
@@ -257,12 +264,10 @@ func renderError(w http.ResponseWriter, status int, err error) {
 
 // Shortcut for rendering a template and doing the right associated error
 // handling.
-func renderTemplate(w http.ResponseWriter, file string, locals map[string]interface{}) {
+func renderTemplate(w http.ResponseWriter, file string, locals map[string]interface{}) error {
 	template, err := getTemplate(file)
 	if err != nil {
-		renderError(w, http.StatusInternalServerError,
-			errors.Wrap(err, "Failed to compile template"))
-		return
+		return errors.Wrap(err, "Failed to compile template")
 	}
 
 	err = template.Execute(w, locals)
@@ -271,6 +276,16 @@ func renderTemplate(w http.ResponseWriter, file string, locals map[string]interf
 
 		// Body may have already been sent, so just respond normally.
 		log.Printf("Error: %v", err)
+		return nil
+	}
+
+	return nil
+}
+
+func withErrorHandling(w http.ResponseWriter, fn func() error) {
+	err := fn()
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
 		return
 	}
 }
