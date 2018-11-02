@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,6 +14,12 @@ import (
 const (
 	mailDomain = "list.brandur.org"
 	mailList   = "passages@" + mailDomain
+)
+
+var (
+	ErrInvalidEmail = errors.New("That doesn't look like a valid email address")
+
+	emailRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
 //
@@ -136,6 +143,14 @@ func (c *SignupStarter) Run() (res *SignupStarterResult, resErr error) {
 			}
 		}
 	}()
+
+	// We know that a simple regexp validation won't detect all invalid email
+	// addresses, so to some extent we'll be relying on Mailgun to do some of
+	// that work for us.
+	if !emailRegexp.MatchString(c.Email) {
+		resErr = ErrInvalidEmail
+		return
+	}
 
 	var id *int64
 	var lastSentAt, completedAt *time.Time

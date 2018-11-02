@@ -175,6 +175,17 @@ func TestSignupStarter(t *testing.T) {
 
 		assert.Equal(t, 0, len(mailAPI.MessagesSent))
 	})
+
+	// Invalid email address
+	t.Run("InvalidEmail", func(t *testing.T) {
+		testhelpers.ResetDB(t, db)
+
+		mailAPI := NewFakeMailAPI()
+		mediator := signupStarter(db, mailAPI, "blah-not-an-email")
+
+		_, err := mediator.Run()
+		assert.Error(t, ErrInvalidEmail, err)
+	})
 }
 
 //
