@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"gopkg.in/mailgun/mailgun-go.v1"
@@ -66,15 +67,35 @@ func NewMailgunAPI(mailDomain, apiKey string) *MailgunAPI {
 
 func (a *MailgunAPI) AddMember(list, email string) error {
 	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-	return a.mg.CreateMember(true, list, mailgun.Member{
+	err := a.mg.CreateMember(true, list, mailgun.Member{
 		Address: email,
 		Vars: map[string]interface{}{
 			"passages-signup":           true,
 			"passages-signup-timestamp": timestamp,
 		},
 	})
+	return interpretMailgunError(err)
 }
 
 func (a *MailgunAPI) SendMessage(email, contents string) error {
 	return nil
+}
+
+//
+// Private functions
+//
+
+func interpretMailgunError(err error) error {
+	unexpectedErr, ok := err.(*mailgun.UnexpectedResponseError)
+	if ok {
+		message := string(unexpectedErr.Data)
+		if message == "" {
+			message = "(empty)"
+		}
+
+		return fmt.Errorf("Got unexpected status code %v from Mailgun. Message: %v",
+			unexpectedErr.Actual, message)
+	}
+
+	return err
 }

@@ -1,17 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/brandur/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joeshaw/envdecode"
+	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 	"github.com/yosssi/ace"
-	"gopkg.in/mailgun/mailgun-go.v1"
 )
 
 const (
@@ -22,6 +23,10 @@ const (
 // Conf contains configuration information for the command. It's extracted from
 // environment variables.
 type Conf struct {
+	// DatabaseURL is the URL to the Postgres database used to store program
+	// state.
+	DatabaseURL string `env:"DATABASE_URL,required"`
+
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
 
@@ -126,27 +131,25 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var message string
-	if conf.PassagesEnv != envTesting {
-		mg := mailgun.NewMailgun(mailDomain, conf.MailgunAPIKey, "")
-		timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-		err = mg.CreateMember(true, mailList, mailgun.Member{
-			Address: email,
-			Vars: map[string]interface{}{
-				"passages-signup":           true,
-				"passages-signup-timestamp": timestamp,
-			},
-		})
+	db, err := sql.Open("postgres", conf.DatabaseURL)
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-		if err != nil {
-			errStr := interpretMailgunError(err)
-			log.Printf(errStr)
-			message = fmt.Sprintf("We ran into a problem adding you to the list: %v",
-				errStr)
-		}
-	} else {
-		message = "Skipped Mailgun access for testing"
-		log.Printf(message)
+	mailAPI := getMailAPI()
+
+	mediator := &SignupStarter{
+		DB:      db,
+		Email:   email,
+		MailAPI: mailAPI,
+	}
+	_, err = mediator.Run()
+
+	var message string
+	if err != nil {
+		err = errors.Wrap(err, "Encountered a problem sending a confirmation email")
+		message = err.Error()
 	}
 
 	locals := getLocals(map[string]interface{}{
@@ -162,8 +165,19 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 //
-// Helpers ---
+// Private functions
 //
+
+// getMailAPI gets a mailing API appropriate for the current environment. If
+// we're in testing, we create a fake API so that we never make any real calls
+// out to Mailgun.
+func getMailAPI() MailAPI {
+	if conf.PassagesEnv == envTesting {
+		return NewFakeMailAPI()
+	} else {
+		return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
+	}
+}
 
 // getLocals injects a default set of local variables that are needed for
 // rendering any template and then includes in those specified in the locals
@@ -185,21 +199,6 @@ func getTemplate(file string) (*template.Template, error) {
 		ace.FlushCache()
 	}
 	return ace.Load("layouts/main", file, nil)
-}
-
-func interpretMailgunError(err error) string {
-	unexpectedErr, ok := err.(*mailgun.UnexpectedResponseError)
-	if ok {
-		message := string(unexpectedErr.Data)
-		if message == "" {
-			message = "(empty)"
-		}
-
-		return fmt.Sprintf("Got unexpected status code %v from Mailgun. Message: %v",
-			unexpectedErr.Actual, message)
-	}
-
-	return err.Error()
 }
 
 func redirectToHTTPS(next http.Handler) http.Handler {

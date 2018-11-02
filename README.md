@@ -15,6 +15,8 @@ go get -u github.com/brandur/passages-signup
 cd $GOPATH/src/github.com/brandur/passages-signup
 
 cp .env.sample .env
+createdb passages-signup
+psql passages-signup < schema.sql
 
 # open .env; edit MAILGUN_API_KEY
 

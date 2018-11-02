@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
-	"gopkg.in/mailgun/mailgun-go.v1"
 )
 
 func TestHandleShow(t *testing.T) {
@@ -67,35 +65,6 @@ func TestHandleSubmit(t *testing.T) {
 
 			_, err := ioutil.ReadAll(resp.Body)
 			assert.NoError(t, err)
-		})
-	}
-}
-
-func TestInterpretMailgunError(t *testing.T) {
-	testCases := []struct {
-		name string
-		err  error
-		want string
-	}{
-		{
-			"BuiltIn",
-			fmt.Errorf("test"),
-			"test",
-		},
-		{
-			"UnexpectedResponse",
-			&mailgun.UnexpectedResponseError{Actual: 200, Data: []byte("test")},
-			"Got unexpected status code 200 from Mailgun. Message: test",
-		},
-		{
-			"UnexpectedResponseWithEmptyBody",
-			&mailgun.UnexpectedResponseError{Actual: 200, Data: []byte("")},
-			"Got unexpected status code 200 from Mailgun. Message: (empty)",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, interpretMailgunError(tc.err))
 		})
 	}
 }
