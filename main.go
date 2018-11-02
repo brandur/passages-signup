@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
@@ -228,13 +227,6 @@ func getLocals(locals map[string]interface{}) map[string]interface{} {
 	return defaults
 }
 
-func getTemplate(file string) (*template.Template, error) {
-	if conf.PassagesEnv != envProduction {
-		ace.FlushCache()
-	}
-	return ace.Load("layouts/main", file, nil)
-}
-
 func redirectToHTTPS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		proto := req.Header.Get("X-Forwarded-Proto")
@@ -264,7 +256,11 @@ func renderError(w http.ResponseWriter, status int, renderErr error) {
 // Shortcut for rendering a template and doing the right associated error
 // handling.
 func renderTemplate(w http.ResponseWriter, file string, locals map[string]interface{}) error {
-	template, err := getTemplate(file)
+	if conf.PassagesEnv != envProduction {
+		ace.FlushCache()
+	}
+
+	template, err := ace.Load("layouts/main", file, nil)
 	if err != nil {
 		return errors.Wrap(err, "Failed to compile template")
 	}
