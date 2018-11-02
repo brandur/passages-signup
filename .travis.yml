@@ -3,8 +3,15 @@ language: go
 go:
   - "1.11"
 
+services:
+  - postgresql
+
 before_install:
   - travis_retry go get -u golang.org/x/lint/golint
+
+before_script:
+  - psql -U postgres -c 'CREATE DATABASE "passages-signup-test";'
+  - psql -U postgres passages-signup-test < schema.sql
 
 script:
   - go test -v &&
