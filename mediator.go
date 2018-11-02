@@ -3,21 +3,20 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
 
-const (
-	mailDomain = "list.brandur.org"
-	mailList   = "passages@" + mailDomain
+var (
+	ErrInvalidEmail = errors.New("That doesn't look like a valid email address")
 )
 
 var (
-	ErrInvalidEmail = errors.New("That doesn't look like a valid email address")
-
 	emailRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
@@ -67,7 +66,7 @@ func (c *SignupFinisher) Run(tx *sql.Tx) (*SignupFinisherResult, error) {
 		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
 
-	fmt.Printf("Adding %v to the list\n", *email)
+	log.Printf("Adding %v to the list\n", *email)
 	err = c.MailAPI.AddMember(mailList, *email)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to add email to list")
@@ -164,7 +163,7 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 	// before but failed to complete the process, and now wants to try again.
 	// The duration parameter may need to be tweaked.
 	if (*lastSentAt).After(time.Now().Add(-24 * time.Hour)) {
-		fmt.Printf("Last send was too soon so not re-sending confirmation")
+		log.Printf("Last send was too soon so not re-sending confirmation")
 		return &SignupStarterResult{ConfirmationRateLimited: true}, nil
 	}
 
@@ -188,8 +187,20 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 }
 
 func (c *SignupStarter) sendConfirmationMessage(token string) error {
-	fmt.Printf("Sending confirmation mail to %v with token %v\n", c.Email, token)
-	return c.MailAPI.SendMessage(c.Email, "hello")
+	log.Printf("Sending confirmation mail to %v with token %v\n", c.Email, token)
+
+	subject := "Passages & Glass signup confirmation"
+	contents := strings.TrimSpace(fmt.Sprintf(`
+Hello! I recently received a request to join the Passages & Glass mailing list. See here for more information:
+	https://brandur.org/newsletter
+
+If you'd still like to join, please confirm by clicking this link:
+	%s/confirm/%s
+
+If you received this email in error, it's safe to ignore it. You will stay unsubscribed by default.
+	`, conf.PublicURL, token))
+
+	return c.MailAPI.SendMessage(c.Email, subject, contents)
 }
 
 // SignupStarterResult holds the results of a successful run of SignupStarter.

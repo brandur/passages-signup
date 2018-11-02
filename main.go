@@ -18,6 +18,12 @@ import (
 const (
 	envProduction = "production"
 	envTesting    = "testing"
+
+	fromAddress    = "Passages & Glass Bot <" + listAddress + ">"
+	listAddress    = "passages@" + mailDomain
+	mailDomain     = "list.brandur.org"
+	mailList       = "passages@" + mailDomain
+	replyToAddress = "brandur@brandur.org"
 )
 
 // Conf contains configuration information for the command. It's extracted from
@@ -102,7 +108,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var res *SignupFinisherResult
-		WithTransaction(db, func(tx *sql.Tx) error {
+		err = WithTransaction(db, func(tx *sql.Tx) error {
 			mediator := &SignupFinisher{
 				MailAPI: getMailAPI(),
 				Token:   token,
@@ -167,7 +173,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var res *SignupStarterResult
-		WithTransaction(db, func(tx *sql.Tx) error {
+		err = WithTransaction(db, func(tx *sql.Tx) error {
 			mediator := &SignupStarter{
 				Email:   email,
 				MailAPI: getMailAPI(),

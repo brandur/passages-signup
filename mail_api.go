@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"gopkg.in/mailgun/mailgun-go.v1"
@@ -19,7 +20,7 @@ type MailAPI interface {
 	AddMember(list, email string) error
 
 	// SendMessage sends a message an email address.
-	SendMessage(email, contents string) error
+	SendMessage(email, subject, contents string) error
 }
 
 //
@@ -41,7 +42,7 @@ type FakeMailAPIMemberAdded struct {
 
 // FakeMailAPIMessageSent records a message being sent from a FakeMailAPI.
 type FakeMailAPIMessageSent struct {
-	Email, Contents string
+	Email, Subject, Contents string
 }
 
 // NewFakeMailAPI initializes a new FakeMailAPI.
@@ -57,9 +58,9 @@ func (a *FakeMailAPI) AddMember(list, email string) error {
 }
 
 // SendMessage sends a message an email address.
-func (a *FakeMailAPI) SendMessage(email, contents string) error {
+func (a *FakeMailAPI) SendMessage(email, subject, contents string) error {
 	a.MessagesSent = append(a.MessagesSent,
-		&FakeMailAPIMessageSent{email, contents})
+		&FakeMailAPIMessageSent{email, subject, contents})
 	return nil
 }
 
@@ -95,8 +96,20 @@ func (a *MailgunAPI) AddMember(list, email string) error {
 }
 
 // SendMessage sends a message an email address.
-func (a *MailgunAPI) SendMessage(email, contents string) error {
-	return nil
+func (a *MailgunAPI) SendMessage(email, subject, contents string) error {
+	message := a.mg.NewMessage(
+		fromAddress,
+		subject,
+		contents)
+	message.AddRecipient(email)
+	message.SetReplyTo(replyToAddress)
+	//message.SetHtml(html)
+
+	resp, _, err := a.mg.Send(message)
+	log.Printf(`Sent to: %s (response: "%s") (error: "%s")`,
+		email, resp, err)
+
+	return err
 }
 
 //
