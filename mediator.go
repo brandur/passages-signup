@@ -34,16 +34,6 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 		return nil, errors.Wrap(err, "Failed to start transaction")
 	}
 
-	// Try to commit the transaction provided we didn't receive some other
-	// error condition.
-	defer func() {
-		if err == nil {
-			err = tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
-
 	var id *int64
 	var email *string
 	err = tx.QueryRow(`
@@ -54,11 +44,12 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 
 	// No such token.
 	if err == sql.ErrNoRows {
-		return &SignupFinisherResult{TokenNotFound: true}, nil
+		return &SignupFinisherResult{TokenNotFound: true}, tx.Commit()
 	}
 
 	// Handle all other database-related errors.
 	if err != nil {
+		tx.Rollback()
 		return nil, errors.Wrap(err, "Failed to query for token")
 	}
 
@@ -73,21 +64,24 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 		WHERE id = $1
 	`, *id)
 	if err != nil {
+		tx.Rollback()
 		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
 
 	fmt.Printf("Adding %v to the list\n", *email)
 	err = c.MailAPI.AddMember(mailList, *email)
 	if err != nil {
+		tx.Rollback()
 		return nil, errors.Wrap(err, "Failed to add email to list")
 	}
 
-	return &SignupFinisherResult{SignupFinished: true}, nil
+	return &SignupFinisherResult{Email: *email, SignupFinished: true}, tx.Commit()
 }
 
 // SignupFinisherResult holds the results of a successful run of
 // SignupFinisher.
 type SignupFinisherResult struct {
+	Email          string
 	SignupFinished bool
 	TokenNotFound  bool
 }
@@ -116,16 +110,6 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 		return nil, errors.Wrap(err, "Failed to start transaction")
 	}
 
-	// Try to commit the transaction provided we didn't receive some other
-	// error condition.
-	defer func() {
-		if err == nil {
-			err = tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
-
 	var id *int64
 	var lastSentAt, completedAt *time.Time
 	var token *string
@@ -152,15 +136,17 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 				($1, $2)
 		`, c.Email, token)
 		if err != nil {
+			tx.Rollback()
 			return nil, errors.Wrap(err, "Failed to insert new signup row")
 		}
 
 		err = c.sendConfirmationMessage(token)
 		if err != nil {
+			tx.Rollback()
 			return nil, errors.Wrap(err, "Failed to send confirmation message")
 		}
 
-		return &SignupStarterResult{NewSignup: true}, nil
+		return &SignupStarterResult{NewSignup: true}, tx.Commit()
 	}
 
 	// Handle all other database-related errors.
@@ -170,7 +156,7 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 
 	// If the signup process is already fully completed, we're done.
 	if completedAt != nil {
-		return &SignupStarterResult{AlreadySubscribed: true}, nil
+		return &SignupStarterResult{AlreadySubscribed: true}, tx.Commit()
 	}
 
 	// If we sent the last confirmation email recently, then don't send it
@@ -181,7 +167,8 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 	// before but failed to complete the process, and now wants to try again.
 	// The duration parameter may need to be tweaked.
 	if (*lastSentAt).After(time.Now().Add(-24 * time.Hour)) {
-		return &SignupStarterResult{ConfirmationRateLimited: true}, nil
+		fmt.Printf("Last send was too soon so not re-sending confirmation")
+		return &SignupStarterResult{ConfirmationRateLimited: true}, tx.Commit()
 	}
 
 	// Otherwise, update the timestamp and re-send the confirmation message.
@@ -191,12 +178,18 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 		WHERE id = $1
 	`, *id)
 	if err != nil {
+		tx.Rollback()
 		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
 
 	// Re-send confirmation.
 	err = c.sendConfirmationMessage(*token)
-	return &SignupStarterResult{ConfirmationResent: true}, err
+	if err != nil {
+		tx.Rollback()
+		return nil, errors.Wrap(err, "Failed to send confirmation email")
+	}
+
+	return &SignupStarterResult{ConfirmationResent: true}, tx.Commit()
 }
 
 func (c *SignupStarter) sendConfirmationMessage(token string) error {

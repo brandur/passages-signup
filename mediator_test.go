@@ -32,6 +32,7 @@ func TestSignupFinisher(t *testing.T) {
 		res, err := mediator.Run()
 		assert.NoError(t, err)
 
+		assert.Equal(t, testEmail, res.Email)
 		assert.True(t, res.SignupFinished)
 		assert.False(t, res.TokenNotFound)
 
@@ -46,6 +47,7 @@ func TestSignupFinisher(t *testing.T) {
 		res, err = mediator.Run()
 		assert.NoError(t, err)
 
+		assert.Equal(t, testEmail, res.Email)
 		assert.True(t, res.SignupFinished)
 		assert.False(t, res.TokenNotFound)
 
@@ -62,6 +64,7 @@ func TestSignupFinisher(t *testing.T) {
 		res, err := mediator.Run()
 		assert.NoError(t, err)
 
+		assert.Empty(t, res.Email)
 		assert.False(t, res.SignupFinished)
 		assert.True(t, res.TokenNotFound)
 

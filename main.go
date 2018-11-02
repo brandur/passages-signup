@@ -56,6 +56,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleShow)
+	r.HandleFunc("/confirm/{token}", handleConfirm)
 	r.HandleFunc("/submit", handleSubmit)
 
 	// Serves up static files found in public/
@@ -89,6 +90,53 @@ func main() {
 //
 // Handlers ---
 //
+
+func handleConfirm(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	token := vars["token"]
+
+	db, err := sql.Open("postgres", conf.DatabaseURL)
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	mailAPI := getMailAPI()
+
+	mediator := &SignupFinisher{
+		DB:      db,
+		MailAPI: mailAPI,
+		Token:   token,
+	}
+	res, err := mediator.Run()
+
+	template, err := getTemplate("views/submit")
+	if err != nil {
+		renderError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	var message string
+	if err != nil {
+		err = errors.Wrap(err, "Encountered a problem finishing signup")
+		message = err.Error()
+	} else if res.TokenNotFound {
+		w.WriteHeader(http.StatusNotFound)
+		message = "We couldn't find that confirmation token."
+	} else {
+		message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
+	}
+
+	locals := getLocals(map[string]interface{}{
+		"message": message,
+	})
+	err = template.Execute(w, locals)
+	if err != nil {
+		// Body may have already been sent, so just respond normally.
+		log.Printf("Error rendering template: %v", err)
+		return
+	}
+}
 
 func handleShow(w http.ResponseWriter, r *http.Request) {
 	template, err := getTemplate("views/show")
@@ -150,10 +198,11 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "Encountered a problem sending a confirmation email")
 		message = err.Error()
+	} else {
+		message = fmt.Sprintf("Thank you for signing up. We've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
 	}
 
 	locals := getLocals(map[string]interface{}{
-		"email":   email,
 		"message": message,
 	})
 	err = template.Execute(w, locals)
