@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,8 +37,10 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 	// Try to commit the transaction provided we didn't receive some other
 	// error condition.
 	defer func() {
-		if err != nil {
+		if err == nil {
 			err = tx.Commit()
+		} else {
+			tx.Rollback()
 		}
 	}()
 
@@ -65,25 +68,28 @@ func (c *SignupFinisher) Run() (*SignupFinisherResult, error) {
 	// times as necessary.
 	_, err = tx.Exec(`
 		UPDATE signup
-		SET completed_at = NOW()
+		SET completed_at = NOW(),
+			last_sent_at = NULL
 		WHERE id = $1
 	`, *id)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
 
+	fmt.Printf("Adding %v to the list\n", *email)
 	err = c.MailAPI.AddMember(mailList, *email)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to add email to list")
 	}
 
-	return &SignupFinisherResult{}, nil
+	return &SignupFinisherResult{SignupFinished: true}, nil
 }
 
 // SignupFinisherResult holds the results of a successful run of
 // SignupFinisher.
 type SignupFinisherResult struct {
-	TokenNotFound bool
+	SignupFinished bool
+	TokenNotFound  bool
 }
 
 //
@@ -113,8 +119,10 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 	// Try to commit the transaction provided we didn't receive some other
 	// error condition.
 	defer func() {
-		if err != nil {
+		if err == nil {
 			err = tx.Commit()
+		} else {
+			tx.Rollback()
 		}
 	}()
 
@@ -122,15 +130,20 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 	var lastSentAt, completedAt *time.Time
 	var token *string
 	err = tx.QueryRow(`
-		SELECT last_sent_at, completed_at, token
+		SELECT id, completed_at, last_sent_at, token
 		FROM signup
 		WHERE email = $1
-	`, c.Email).Scan(&id, &lastSentAt, &completedAt, &token)
+	`, c.Email).Scan(&id, &completedAt, &lastSentAt, &token)
 
 	// The happy path: if we have nothing in the database, then just run the
 	// process from scratch.
 	if err == sql.ErrNoRows {
-		token := uuid.NewV4().String()
+		tokenStruct, err := uuid.NewV4()
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to generate UUID")
+		}
+
+		token := tokenStruct.String()
 
 		_, err = tx.Exec(`
 			INSERT INTO signup
@@ -156,7 +169,7 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 	}
 
 	// If the signup process is already fully completed, we're done.
-	if lastSentAt != nil && completedAt != nil {
+	if completedAt != nil {
 		return &SignupStarterResult{AlreadySubscribed: true}, nil
 	}
 
@@ -183,17 +196,18 @@ func (c *SignupStarter) Run() (*SignupStarterResult, error) {
 
 	// Re-send confirmation.
 	err = c.sendConfirmationMessage(*token)
-	return nil, err
+	return &SignupStarterResult{ConfirmationResent: true}, err
 }
 
 func (c *SignupStarter) sendConfirmationMessage(token string) error {
-	// TODO: !
-	return nil
+	fmt.Printf("Sending confirmation mail to %v with token %v\n", c.Email, token)
+	return c.MailAPI.SendMessage(c.Email, "hello")
 }
 
 // SignupStarterResult holds the results of a successful run of SignupStarter.
 type SignupStarterResult struct {
 	AlreadySubscribed       bool
 	ConfirmationRateLimited bool
+	ConfirmationResent      bool
 	NewSignup               bool
 }

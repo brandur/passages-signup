@@ -23,6 +23,11 @@ go install && forego start -p 5001 web
 
 Open your browser to [localhost:5001](http://localhost:5001).
 
+## Testing
+
+    createdb passages-signup-test
+    psql passages-signup-test < schema.sql
+
 ## Vendoring Dependencies
 
 Dependencies are managed with dep. New ones can be vendored
