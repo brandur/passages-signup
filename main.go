@@ -228,9 +228,9 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 func getMailAPI() MailAPI {
 	if conf.PassagesEnv == envTesting {
 		return NewFakeMailAPI()
-	} else {
-		return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
 	}
+
+	return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
 }
 
 // getLocals injects a default set of local variables that are needed for
