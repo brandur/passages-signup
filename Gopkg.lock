@@ -2,68 +2,192 @@
 
 
 [[projects]]
+  digest = "1:90272eae3bf75d2aa681ff3eee6cf4f49e8b06db533dc9c830ef214e5abbaaf2"
+  name = "github.com/PuerkitoBio/goquery"
+  packages = ["."]
+  pruneopts = ""
+  revision = "dc2ec5c7ca4d9aae063b79b9f581dd3ea6afd2b2"
+  version = "v1.4.1"
+
+[[projects]]
+  digest = "1:4d0cb5aec47a2aec8b8b211540dc59902f8f00d571281356597b41ae349f4885"
+  name = "github.com/andybalholm/cascadia"
+  packages = ["."]
+  pruneopts = ""
+  revision = "901648c87902174f774fac311d7f176f8647bdaa"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:4f2c1a7939b0d703725d395799a583f6c0d17801a1a8b3207e0f160aada64c7a"
+  name = "github.com/aymerick/douceur"
+  packages = [
+    "css",
+    "inliner",
+    "parser",
+  ]
+  pruneopts = ""
+  revision = "c5c95ec357c8235fbd7f34e8c843d36783f3fad9"
+  version = "v0.2.0"
+
+[[projects]]
   branch = "master"
+  digest = "1:6cac5c2ade9586303beac2013c0e64734f13740832383bd445985d065a2dd5c7"
   name = "github.com/brandur/csrf"
   packages = ["."]
+  pruneopts = ""
   revision = "fb0ef0558bdc7ed27180cbfa8d1197d2f4ece4f4"
 
 [[projects]]
+  digest = "1:0a39ec8bf5629610a4bc7873a92039ee509246da3cef1a0ea60f1ed7e5f9cea5"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
+  pruneopts = ""
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:20ed7daa9b3b38b6d1d39b48ab3fd31122be5419461470d0c28de3e121c93ecf"
   name = "github.com/gorilla/context"
   packages = ["."]
+  pruneopts = ""
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
   version = "v1.1"
 
 [[projects]]
+  digest = "1:0fa74e2fa9e562bc1ba6636ba557b8017f9b545c7cde50acff4e0b77519dd137"
+  name = "github.com/gorilla/css"
+  packages = ["scanner"]
+  pruneopts = ""
+  revision = "398b0b046082ecb3694c01bec6b336a06a4e530a"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:783fde5796ef54ba05de240f2529b6c9fbabc541e70ea43585c53b3f1bbabb5b"
   name = "github.com/gorilla/mux"
   packages = ["."]
+  pruneopts = ""
   revision = "bcd8bc72b08df0f70df986b97f95590779502d31"
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:3313a63031ae281e5f6fd7b0bbca733dfa04d2429df86519e3b4d4c016ccb836"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru",
+  ]
+  pruneopts = ""
+  revision = "20f1fb78b0740ba8c3cb143a61e86ba5c8669768"
+  version = "v0.5.0"
+
+[[projects]]
   branch = "master"
+  digest = "1:6ee26ff9957a577db5a234b4f051e56256e330606859b611b0b454b4783e47ae"
   name = "github.com/joeshaw/envdecode"
   packages = ["."]
+  pruneopts = ""
   revision = "6326cbed175e32cd5183be1cc1027e0823c91edb"
 
 [[projects]]
+  digest = "1:11352d3d929e2895eb60ae63ade7279293d42893cb4acb0f9ecde5b8b101fafb"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid",
+  ]
+  pruneopts = ""
+  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = ""
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
+  pruneopts = ""
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:7f569d906bdd20d906b606415b7d794f798f91a62fcfb6a4daa6d50690fb7a3f"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = ""
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
+  digest = "1:8e7d1910593db3b38b0c3e4bf3f82bc041dfddfed5f6d36a47f3ad7e72710d8d"
   name = "github.com/stretchr/testify"
-  packages = ["assert","require"]
+  packages = [
+    "assert",
+    "require",
+  ]
+  pruneopts = ""
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
 [[projects]]
+  digest = "1:137933b00683d22f18bff7df642d05b8ea0a03dd48d5581317e2721a24b982e2"
+  name = "github.com/throttled/throttled"
+  packages = [
+    ".",
+    "store/memstore",
+  ]
+  pruneopts = ""
+  revision = "ee00e877b953e232c5b0fff46f75cdc56b984524"
+  version = "v2.2.2"
+
+[[projects]]
+  digest = "1:b1e5dc66cd8ad9712eb8fd4dfaecac6ae45cbcde94476c5b64d905c5d789eef7"
   name = "github.com/yosssi/ace"
   packages = ["."]
+  pruneopts = ""
   revision = "ea038f4770b6746c3f8f84f14fa60d9fe1205b56"
   version = "v0.0.5"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7324efc9699dcfc0f3914e59c8a74cf1fe3129f303f52b7fa2e479a0a49c5d32"
+  name = "golang.org/x/net"
+  packages = [
+    "html",
+    "html/atom",
+  ]
+  pruneopts = ""
+  revision = "c10e9556a7bc0e7c942242b606f0acf024ad5d6a"
+
+[[projects]]
+  digest = "1:bd27bd4fc9aa9ff01ae370089fce2753f6a2800f6da5f684c2b82c924048b0f1"
   name = "gopkg.in/mailgun/mailgun-go.v1"
   packages = ["."]
+  pruneopts = ""
   revision = "a4002e2df2e8ca2da6a6fbb4a72871b504e49f50"
   version = "v1.1.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d44e469d074a6517834bff9913b1a530460b33206cc3a71a2c814b470000edc4"
+  input-imports = [
+    "github.com/aymerick/douceur/inliner",
+    "github.com/brandur/csrf",
+    "github.com/gorilla/mux",
+    "github.com/joeshaw/envdecode",
+    "github.com/lib/pq",
+    "github.com/pkg/errors",
+    "github.com/satori/go.uuid",
+    "github.com/stretchr/testify/require",
+    "github.com/throttled/throttled",
+    "github.com/throttled/throttled/store/memstore",
+    "github.com/yosssi/ace",
+    "gopkg.in/mailgun/mailgun-go.v1",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

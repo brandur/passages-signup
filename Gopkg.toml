@@ -24,10 +24,6 @@
   root-package = "github.com/brandur/passages-signup"
 
 [[constraint]]
-  name = "github.com/gorilla/csrf"
-  version = "1.5.0"
-
-[[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.4.0"
 
