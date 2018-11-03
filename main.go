@@ -12,6 +12,8 @@ import (
 	"github.com/joeshaw/envdecode"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/throttled/throttled"
+	"github.com/throttled/throttled/store/memstore"
 )
 
 const (
@@ -88,6 +90,14 @@ func main() {
 
 	}
 	handler = csrf.Protect(options...)(handler)
+
+	// Use a rate limiter to prevent enumeration of email addresses and so it's
+	// harder to maliciously burn through my Mailgun API limit.
+	rateLimiter, err := getRateLimiter()
+	if err != nil {
+		log.Fatal(err)
+	}
+	handler = rateLimiter.RateLimit(handler)
 
 	if conf.PassagesEnv == envProduction {
 		handler = redirectToHTTPS(handler)
@@ -226,6 +236,40 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 //
 // Private functions
 //
+
+func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
+	// We use a memory store instead of something like Redis because for the
+	// time being we know that this app will only ever run on a single dyno. If
+	// that invariant ever changes, the decision should be revisited.
+	//
+	// All state is lost when the dyno goes to sleep, but since we're using
+	// small time scales anyway, that's fine.
+	//
+	// Note the argument here is the maximum number of allowed keys. Dynos are
+	// relatively large, so pick a number big enough to give us a lot of
+	// leeway.
+	store, err := memstore.New(65536)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start at 3 allowed tokens and refill at a rate of 3 per second.
+	quota := throttled.RateQuota{
+		MaxBurst: 3,
+		MaxRate:  throttled.PerSec(3),
+	}
+
+	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
+	if err != nil {
+		return nil, err
+	}
+
+	// Vary based off of remote IP.
+	return &throttled.HTTPRateLimiter{
+		RateLimiter: rateLimiter,
+		VaryBy:      &throttled.VaryBy{RemoteAddr: true},
+	}, nil
+}
 
 // getMailAPI gets a mailing API appropriate for the current environment. If
 // we're in testing, we create a fake API so that we never make any real calls
