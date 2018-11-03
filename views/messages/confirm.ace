@@ -45,6 +45,6 @@ html lang="en"
       #passages Passages & Glass
       p Hello! I recently received a request to add this email address to the <a href="https://brandur.org/newsletter"><em>Passages & Glass</em> mailing list</a>.
 
-      p If you'd still like to join, please <a href="{{.publicURL}}/confirm/{{.token}}">confirm by following this link</a>.
+      p If you'd still like to join, please <a href="{{.publicURL}}/confirm/{{.token}}">confirm by clicking here</a>.
 
       p If you received this email in error, it's safe to ignore it. By default you will stay unsubscribed.

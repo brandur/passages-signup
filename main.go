@@ -226,9 +226,9 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 			// limiter in the stack that throttles quite aggressively.
 			message = fmt.Sprintf("<strong>%s</strong> is already subscribed to <em>Passages & Glass</em>. Thank you for signing up!", email)
 		} else if res.ConfirmationRateLimited {
-			message = fmt.Sprintf("Thank you for signing up. We recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon. Please try to find the message and click the enclosed link to finish signing up for <em>Passages & Glass</em> (check your spam folder if you can't find it).", email)
+			message = fmt.Sprintf("Thank you for signing up. I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>Passages & Glass</em>. If you can't find it, try checking your spam folder.", email)
 		} else {
-			message = fmt.Sprintf("Thank you for signing up. We've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
+			message = fmt.Sprintf("Thank you for signing up! I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
 		}
 
 		return renderTemplate(w, "views/ok", getLocals(map[string]interface{}{
