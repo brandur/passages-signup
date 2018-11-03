@@ -220,6 +220,10 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if res.AlreadySubscribed {
+			// Confirming that a user is subscribed is somewhat of a liability
+			// given that it could be used to enumerate emails that are in the
+			// list. We (largely) mitigate this problem by putting a rate
+			// limiter in the stack that throttles quite aggressively.
 			message = fmt.Sprintf("<strong>%s</strong> is already subscribed to <em>Passages & Glass</em>. Thank you for signing up!", email)
 		} else if res.ConfirmationRateLimited {
 			message = fmt.Sprintf("Thank you for signing up. We recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon. Please try to find the message and click the enclosed link to finish signing up for <em>Passages & Glass</em> (check your spam folder if you can't find it).", email)
