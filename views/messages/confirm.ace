@@ -1,3 +1,5 @@
+/ Note that the copy in this file is largely duplicated in `confirm_plain.ace`
+/ as well! If you change anything here, please change that as well.
 
 html lang="en"
   head
