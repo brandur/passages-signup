@@ -20,7 +20,7 @@ const (
 	envProduction = "production"
 	envTesting    = "testing"
 
-	fromAddress    = "Passages & Glass Bot <" + listAddress + ">"
+	fromAddress    = "Passages & Glass <" + listAddress + ">"
 	listAddress    = "passages@" + mailDomain
 	mailDomain     = "list.brandur.org"
 	mailList       = "passages@" + mailDomain
