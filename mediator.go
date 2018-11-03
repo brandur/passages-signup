@@ -61,8 +61,7 @@ func (c *SignupFinisher) Run(tx *sql.Tx) (*SignupFinisherResult, error) {
 	// times as necessary.
 	_, err = tx.Exec(`
 		UPDATE signup
-		SET completed_at = NOW(),
-			last_sent_at = NULL
+		SET completed_at = NOW()
 		WHERE id = $1
 	`, *id)
 	if err != nil {

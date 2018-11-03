@@ -122,6 +122,34 @@ func TestSignupStarter(t *testing.T) {
 		})
 	})
 
+	// Email that's already subscribed (behaves identially to the case of
+	// signup not completed above)
+	t.Run("AlreadySubscribed", func(t *testing.T) {
+		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
+
+			// Manually insert a finished record
+			_, err := tx.Exec(`
+                   INSERT INTO signup
+                           (email, token, last_sent_at, completed_at)
+                   VALUES
+                           ($1, 'not-a-real-token', NOW() - '1 month'::interval, NOW())
+           `, testhelpers.TestEmail)
+			assert.NoError(t, err)
+
+			mailAPI := NewFakeMailAPI()
+			mediator := signupStarter(mailAPI, testhelpers.TestEmail)
+
+			res, err := mediator.Run(tx)
+			assert.NoError(t, err)
+
+			assert.False(t, res.ConfirmationRateLimited)
+			assert.True(t, res.ConfirmationResent)
+			assert.False(t, res.NewSignup)
+
+			assert.Equal(t, 0, len(mailAPI.MessagesSent))
+		})
+	})
+
 	// Email already in progress, but too soon after last attempt
 	t.Run("ConfirmationRateLimited", func(t *testing.T) {
 		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
