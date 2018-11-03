@@ -43,7 +43,7 @@ html lang="en"
   body
     #container
       #passages Passages & Glass
-      p Hello! I recently received a request to join the <a href="https://brandur.org/newsletter"><em>Passages & Glass</em> mailing list</a>.
+      p Hello! I recently received a request to add this email address to the <a href="https://brandur.org/newsletter"><em>Passages & Glass</em> mailing list</a>.
 
       p If you'd still like to join, please <a href="{{.publicURL}}/confirm/{{.token}}">confirm by following this link</a>.
 
