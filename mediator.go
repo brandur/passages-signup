@@ -14,6 +14,8 @@ import (
 )
 
 var (
+	// ErrInvalidEmail is the error that's returned if a given email address
+	// didn't match a regex to check for email validity.
 	ErrInvalidEmail = errors.New("That doesn't look like a valid email address")
 )
 
