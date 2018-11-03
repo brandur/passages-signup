@@ -112,13 +112,13 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 	}
 
 	var id *int64
-	var lastSentAt, completedAt *time.Time
+	var lastSentAt *time.Time
 	var token *string
 	err := tx.QueryRow(`
-		SELECT id, completed_at, last_sent_at, token
+		SELECT id, last_sent_at, token
 		FROM signup
 		WHERE email = $1
-	`, c.Email).Scan(&id, &completedAt, &lastSentAt, &token)
+	`, c.Email).Scan(&id, &lastSentAt, &token)
 
 	// The happy path: if we have nothing in the database, then just run the
 	// process from scratch.
@@ -153,10 +153,13 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 		return nil, errors.Wrap(err, "Failed to query for existing record")
 	}
 
-	// If the signup process is already fully completed, we're done.
-	if completedAt != nil {
-		return &SignupStarterResult{AlreadySubscribed: true}, nil
-	}
+	// Note that we don't bail early even if the record appears to be completed
+	// because if the user was previously subscribed but then unsubscribed, we
+	// won't know about the unsubscription because it happens entirely through
+	// Mailgun.
+	//
+	// The side effect is that we may send a signup confirmation to a user who
+	// is already subscribed, but that's not a big deal.
 
 	// If we sent the last confirmation email recently, then don't send it
 	// again. This gives a malicious actor less opportunity to spam an innocent
@@ -224,7 +227,6 @@ func (c *SignupStarter) sendConfirmationMessage(token string) error {
 
 // SignupStarterResult holds the results of a successful run of SignupStarter.
 type SignupStarterResult struct {
-	AlreadySubscribed       bool
 	ConfirmationRateLimited bool
 	ConfirmationResent      bool
 	NewSignup               bool

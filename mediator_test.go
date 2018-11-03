@@ -85,41 +85,12 @@ func TestSignupStarter(t *testing.T) {
 			res, err := mediator.Run(tx)
 			assert.NoError(t, err)
 
-			assert.False(t, res.AlreadySubscribed)
 			assert.False(t, res.ConfirmationRateLimited)
 			assert.False(t, res.ConfirmationResent)
 			assert.True(t, res.NewSignup)
 
 			assert.Equal(t, 1, len(mailAPI.MessagesSent))
 			assert.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Email)
-		})
-	})
-
-	// Email that's already subscribed
-	t.Run("AlreadySubscribed", func(t *testing.T) {
-		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
-
-			// Manually insert a finished record
-			_, err := tx.Exec(`
-			INSERT INTO signup
-				(email, token, completed_at)
-			VALUES
-				($1, 'not-a-real-token', NOW())
-		`, testhelpers.TestEmail)
-			assert.NoError(t, err)
-
-			mailAPI := NewFakeMailAPI()
-			mediator := signupStarter(mailAPI, testhelpers.TestEmail)
-
-			res, err := mediator.Run(tx)
-			assert.NoError(t, err)
-
-			assert.True(t, res.AlreadySubscribed)
-			assert.False(t, res.ConfirmationRateLimited)
-			assert.False(t, res.ConfirmationResent)
-			assert.False(t, res.NewSignup)
-
-			assert.Equal(t, 0, len(mailAPI.MessagesSent))
 		})
 	})
 
@@ -142,7 +113,6 @@ func TestSignupStarter(t *testing.T) {
 			res, err := mediator.Run(tx)
 			assert.NoError(t, err)
 
-			assert.False(t, res.AlreadySubscribed)
 			assert.False(t, res.ConfirmationRateLimited)
 			assert.True(t, res.ConfirmationResent)
 			assert.False(t, res.NewSignup)
@@ -170,7 +140,6 @@ func TestSignupStarter(t *testing.T) {
 			res, err := mediator.Run(tx)
 			assert.NoError(t, err)
 
-			assert.False(t, res.AlreadySubscribed)
 			assert.True(t, res.ConfirmationRateLimited)
 			assert.False(t, res.ConfirmationResent)
 			assert.False(t, res.NewSignup)
