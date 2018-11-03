@@ -18,19 +18,20 @@ html lang="en"
       }
 
       a, a:hover, a:visited {
+        border-bottom: 1px solid #000;
         color: black;
         font-weight: bold;
         text-decoration: none;
       }
 
       a:hover {
-        text-decoration: underline;
+        border-bottom: none;
       }
 
       #container {
-        margin: 0;
+        margin: 0 auto;
         max-width: 550px;
-        padding: 30px 100px;
+        padding: 30px;
       }
 
       #passages {

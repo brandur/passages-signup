@@ -28,13 +28,14 @@ html lang="en"
       }
 
       a, a:hover, a:visited {
+        border-bottom: 1px solid #000;
         color: black;
         font-weight: bold;
         text-decoration: none;
       }
 
       a:hover {
-        text-decoration: underline;
+        border-bottom: none;
       }
 
       input[type=email] {
