@@ -12,7 +12,6 @@ import (
 	"github.com/joeshaw/envdecode"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/yosssi/ace"
 )
 
 const (
@@ -64,6 +63,11 @@ func main() {
 	r.HandleFunc("/", handleShow)
 	r.HandleFunc("/confirm/{token}", handleConfirm)
 	r.HandleFunc("/submit", handleSubmit)
+
+	if conf.PassagesEnv != envProduction {
+		r.HandleFunc("/messages/confirm", handleShowConfirmMessagePreview)
+		r.HandleFunc("/messages/confirm_plain", handleShowConfirmMessagePlainPreview)
+	}
 
 	// Serves up static files found in public/
 	r.PathPrefix("/public/").Handler(
@@ -139,7 +143,23 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 
 func handleShow(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, "views/show", map[string]interface{}{})
+		return renderTemplate(w, "views/show", getLocals(map[string]interface{}{}))
+	})
+}
+
+func handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
+	withErrorHandling(w, func() error {
+		return renderTemplate(w, "views/messages/confirm", getLocals(map[string]interface{}{
+			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
+		}))
+	})
+}
+
+func handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
+	withErrorHandling(w, func() error {
+		return renderTemplate(w, "views/messages/confirm_plain", getLocals(map[string]interface{}{
+			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
+		}))
 	})
 }
 
@@ -218,21 +238,6 @@ func getMailAPI() MailAPI {
 	return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
 }
 
-// getLocals injects a default set of local variables that are needed for
-// rendering any template and then includes in those specified in the locals
-// parameter for this particular run.
-func getLocals(locals map[string]interface{}) map[string]interface{} {
-	defaults := map[string]interface{}{
-		"publicURL": conf.PublicURL,
-	}
-
-	for k, v := range locals {
-		defaults[k] = v
-	}
-
-	return defaults
-}
-
 func redirectToHTTPS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		proto := req.Header.Get("X-Forwarded-Proto")
@@ -257,30 +262,6 @@ func renderError(w http.ResponseWriter, status int, renderErr error) {
 		// Hopefully it never comes to this
 		log.Printf("Error during error handling: %v", err)
 	}
-}
-
-// Shortcut for rendering a template and doing the right associated error
-// handling.
-func renderTemplate(w http.ResponseWriter, file string, locals map[string]interface{}) error {
-	if conf.PassagesEnv != envProduction {
-		ace.FlushCache()
-	}
-
-	template, err := ace.Load("layouts/main", file, nil)
-	if err != nil {
-		return errors.Wrap(err, "Failed to compile template")
-	}
-
-	err = template.Execute(w, locals)
-	if err != nil {
-		err = errors.Wrap(err, "Failed to render template")
-
-		// Body may have already been sent, so just respond normally.
-		log.Printf("Error: %v", err)
-		return nil
-	}
-
-	return nil
 }
 
 func withErrorHandling(w http.ResponseWriter, fn func() error) {

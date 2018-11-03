@@ -1,0 +1,47 @@
+
+html lang="en"
+  head
+    title Passages & Glass newsletter signup
+
+    meta content="text/html; charset=utf-8" http-equiv="Content-Type"
+    meta name="viewport" content="width=device-width, initial-scale=1.0"
+
+    = css
+      body {
+        color: #4d4d4d;
+        font-family: Helvetica, sans-serif;
+        font-size: 18px;
+        font-weight: 300;
+        line-height: 1.5;
+      }
+
+      a, a:hover, a:visited {
+        color: black;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      #container {
+        margin: 0;
+        max-width: 550px;
+        padding: 30px 100px;
+      }
+
+      #passages {
+        font-size: 12px;
+        margin: 10px 0;
+        text-transform: uppercase;
+      }
+
+  body
+    #container
+      #passages Passages & Glass
+      p Hello! I recently received a request to join the <a href="https://brandur.org/newsletter"><em>Passages & Glass</em> mailing list</a>.
+
+      p If you'd still like to join, please <a href="{{.publicURL}}/confirm/{{.token}}">confirm by following this link</a>.
+
+      p If you received this email in error, it's safe to ignore it. By default you will stay unsubscribed.

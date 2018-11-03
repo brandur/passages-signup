@@ -20,7 +20,7 @@ type MailAPI interface {
 	AddMember(list, email string) error
 
 	// SendMessage sends a message an email address.
-	SendMessage(email, subject, contents string) error
+	SendMessage(email, subject, contentsPlain, contentsHTML string) error
 }
 
 //
@@ -42,7 +42,7 @@ type FakeMailAPIMemberAdded struct {
 
 // FakeMailAPIMessageSent records a message being sent from a FakeMailAPI.
 type FakeMailAPIMessageSent struct {
-	Email, Subject, Contents string
+	Email, Subject, ContentsPlain, ContentsHTML string
 }
 
 // NewFakeMailAPI initializes a new FakeMailAPI.
@@ -58,9 +58,9 @@ func (a *FakeMailAPI) AddMember(list, email string) error {
 }
 
 // SendMessage sends a message an email address.
-func (a *FakeMailAPI) SendMessage(email, subject, contents string) error {
+func (a *FakeMailAPI) SendMessage(email, subject, contentsPlain, contentsHTML string) error {
 	a.MessagesSent = append(a.MessagesSent,
-		&FakeMailAPIMessageSent{email, subject, contents})
+		&FakeMailAPIMessageSent{email, subject, contentsPlain, contentsHTML})
 	return nil
 }
 
@@ -96,14 +96,14 @@ func (a *MailgunAPI) AddMember(list, email string) error {
 }
 
 // SendMessage sends a message an email address.
-func (a *MailgunAPI) SendMessage(email, subject, contents string) error {
+func (a *MailgunAPI) SendMessage(email, subject, contentsPlain, contentsHTML string) error {
 	message := a.mg.NewMessage(
 		fromAddress,
 		subject,
-		contents)
+		contentsPlain)
 	message.AddRecipient(email)
+	message.SetHtml(contentsHTML)
 	message.SetReplyTo(replyToAddress)
-	//message.SetHtml(html)
 
 	resp, _, err := a.mg.Send(message)
 	log.Printf(`Sent to: %s (response: "%s") (error: "%s")`,

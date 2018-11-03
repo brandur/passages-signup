@@ -1,13 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/aymerick/douceur/inliner"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
@@ -189,18 +190,34 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 func (c *SignupStarter) sendConfirmationMessage(token string) error {
 	log.Printf("Sending confirmation mail to %v with token %v\n", c.Email, token)
 
+	locals := getLocals(map[string]interface{}{
+		"token": token,
+	})
+
 	subject := "Passages & Glass signup confirmation"
-	contents := strings.TrimSpace(fmt.Sprintf(`
-Hello! I recently received a request to join the Passages & Glass mailing list. See here for more information:
-	https://brandur.org/newsletter
 
-If you'd still like to join, please confirm by clicking this link:
-	%s/confirm/%s
+	buf := new(bytes.Buffer)
+	err := renderTemplate(buf, "views/messages/confirm_plain", locals)
+	if err != nil {
+		return errors.Wrap(err, "Error rendering confirmation email (plain)")
+	}
+	confirmPlain := strings.TrimSpace(buf.String())
 
-If you received this email in error, it's safe to ignore it. You will stay unsubscribed by default.
-	`, conf.PublicURL, token))
+	buf = new(bytes.Buffer)
+	err = renderTemplate(buf, "views/messages/confirm", locals)
+	if err != nil {
+		return errors.Wrap(err, "Error rendering confirmation email (HTML)")
+	}
+	confirmHTML := buf.String()
 
-	return c.MailAPI.SendMessage(c.Email, subject, contents)
+	// Inline CSS styling (because that's the only way mail clients will
+	// support it).
+	confirmHTML, err = inliner.Inline(confirmHTML)
+	if err != nil {
+		return errors.Wrap(err, "Error inlining CSS styling")
+	}
+
+	return c.MailAPI.SendMessage(c.Email, subject, confirmPlain, confirmHTML)
 }
 
 // SignupStarterResult holds the results of a successful run of SignupStarter.
