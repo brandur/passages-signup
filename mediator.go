@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/aymerick/douceur/inliner"
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
 )
 
 var (

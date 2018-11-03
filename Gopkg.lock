@@ -46,6 +46,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:dabd16dbd2cc100b33bc4916280439b17f1e9e6e4a45d9c5d4e9c4e2fd0161be"
+  name = "github.com/gofrs/uuid"
+  packages = ["."]
+  pruneopts = ""
+  revision = "7077aa61129615a0d7f45c49101cd011ab221c27"
+  version = "v3.1.2"
+
+[[projects]]
   digest = "1:20ed7daa9b3b38b6d1d39b48ab3fd31122be5419461470d0c28de3e121c93ecf"
   name = "github.com/gorilla/context"
   packages = ["."]
@@ -116,14 +124,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:7f569d906bdd20d906b606415b7d794f798f91a62fcfb6a4daa6d50690fb7a3f"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = ""
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
   digest = "1:8e7d1910593db3b38b0c3e4bf3f82bc041dfddfed5f6d36a47f3ad7e72710d8d"
   name = "github.com/stretchr/testify"
   packages = [
@@ -178,11 +178,11 @@
   input-imports = [
     "github.com/aymerick/douceur/inliner",
     "github.com/brandur/csrf",
+    "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
     "github.com/joeshaw/envdecode",
     "github.com/lib/pq",
     "github.com/pkg/errors",
-    "github.com/satori/go.uuid",
     "github.com/stretchr/testify/require",
     "github.com/throttled/throttled",
     "github.com/throttled/throttled/store/memstore",
