@@ -145,7 +145,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
 		}
 
-		return renderTemplate(w, "views/message", getLocals(map[string]interface{}{
+		return renderTemplate(w, "views/ok", getLocals(map[string]interface{}{
 			"message": message,
 		}))
 	})
@@ -231,7 +231,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 			message = fmt.Sprintf("Thank you for signing up. We've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
 		}
 
-		return renderTemplate(w, "views/message", getLocals(map[string]interface{}{
+		return renderTemplate(w, "views/ok", getLocals(map[string]interface{}{
 			"message": message,
 		}))
 	})
