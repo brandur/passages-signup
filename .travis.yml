@@ -17,8 +17,26 @@ script:
   - go test -v &&
     go vet &&
     golint -set_exit_status &&
-    scripts/check_gofmt.sh
+    scripts/check_gofmt.sh &&
+    docker build -t "$DOCKER_REPO" . &&
+    scripts/push_docker.sh
 
 notifications:
   email:
     on_success: never
+
+# Create an encrypted variable similar to the one below using:
+#
+#     travis encrypt --org DOCKER_PASSWORD=<password>
+#
+# You'll need the `travis` gem which is correctly configured. For more
+# information:
+#
+#     https://docs.travis-ci.com/user/environment-variables/#Defining-encrypted-variables-in-.travis.yml
+#
+env:
+  global:
+    - DOCKER_REPO="brandur/passages-signup"
+    - DOCKER_USERNAME=brandur
+    # DOCKER_PASSWORD
+    - secure: "bnjXDAtqqdwriXtzuyxT5/V6nZqFDyNdZR2EqawA5gcNhmUxIrGTiClwKzG2oiaxbYUj/uRzRMOharhXYi+eTMSdq7FKOd5hS6aRizodQ+90gBRqnfKa36NTguWprFFj4m9TnZU+djVOv1/3N34Qxjr4B54HEz8VFNayapaPfurcytfQfBGV1dAODU46nGkn2vFDQHVm7b8v3ypI8JNG7AwA4XBTrdu+I3hBKrdbCNtvRC9rhJdMTf1JMBzVwwHHX3zsA3N+KtDtXqs137vm3+GEinxpDNiER3j8E0HsLZjZEzfSObepXHlax9EcA24tQDMCoqhXC/2s/c7PhDLU4Rm+tSYF3V66TwF+ULUclCDLJXDfPiJLbK2bDqv0Bbh0944aHVa2+ac1bFKF6+S4Ruqih0zvV7LyC7cn3vwFKaPiHR4eUa7Sf1e9fqBzHkSXg3zm4ob/xr6D7dLnTjWxWOQVrfK2rMOf4Iymh1HdNWSWNbELoV23yP0kXotWc5h5m9lhE9oW2/cPwwvZpaxV/eV5/boRe4+WQpRrYBoL9QYLorOipftjm4l9hi0aKo2JuD+MZ1Ug0bQZ8NBzFoet1mzFV/RsNHxM6RkbkG3+A8sH8YHjGfiP7NBChuI79ozUJ9WAev6ID6sFiUWIMBuw1XNmuE5xfYZTTMixlPyTVF4="

@@ -1,0 +1,12 @@
+# This style of ignore creates a whitelist instead of a blacklist so that we
+# don't have to continually add new files here so that Docker ignores them.
+*
+!/*.go
+!/*.sql
+!/layouts/
+!/public/
+!/vendor/
+!/views/
+
+# Send all Go files except test files which we don't need for the build.
+*_test.go
