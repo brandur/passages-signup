@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: passages-signup
+  labels:
+    app: passages-signup
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        name: passages-signup
+    spec:
+      containers:
+      - name: podcore
+        image: brandur/passages-signup:latest
+        command: ["/passages-signup"]
+        ports:
+        - containerPort: 8082
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-url
+              key: DATABASE_URL
+        - name: MAILGUN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mailgun-api-key
+              key: MAILGUN_API_KEY
+        - name: PASSAGES_ENV
+          value: "production"
+        - name: PORT
+          value: "8082"
+        - name: PUBLIC_URL
+          value: "https://example.com"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8082
+          initialDelaySeconds: 5
+          periodSeconds: 5
