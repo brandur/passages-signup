@@ -30,6 +30,14 @@ const (
 // Conf contains configuration information for the command. It's extracted from
 // environment variables.
 type Conf struct {
+	// AssetsDir is the local directory out of which layouts, static content
+	// (images, stylesheets, etc.), and views will be served.
+	//
+	// Must have a trailing slash.
+	//
+	// Defaults to the current directory.
+	AssetsDir string `env:"ASSETS_DIR,default=./"`
+
 	// DatabaseURL is the URL to the Postgres database used to store program
 	// state.
 	DatabaseURL string `env:"DATABASE_URL,required"`
@@ -43,10 +51,6 @@ type Conf struct {
 
 	// Port is the port over which to serve HTTP.
 	Port string `env:"PORT,default=5001"`
-
-	// PublicDir is the local directory out of which static content (images,
-	// stylesheets, etc.) will be served.
-	PublicDir string `env:"PUBLIC_DIR,default=./public"`
 
 	// PublicURL is the public location from which the site is being served.
 	// This is needed in some places to generate absolute URLs.
@@ -73,13 +77,15 @@ func main() {
 
 	// Serves up static files found in public/
 	r.PathPrefix("/public/").Handler(
-		http.StripPrefix("/public/", http.FileServer(http.Dir(conf.PublicDir))),
+		http.StripPrefix("/public/", http.FileServer(http.Dir(conf.AssetsDir+"public"))),
 	)
 
 	var handler http.Handler = r
 
 	options := []csrf.Option{
 		csrf.AllowedOrigin("https://brandur.org"),
+		csrf.AllowedOrigin("https://passages-signup.brandur.org"),
+		csrf.AllowedOrigin("https://passages-signup.do.brandur.org"),
 		csrf.AllowedOrigin("https://passages-signup.herokuapp.com"),
 	}
 
@@ -145,7 +151,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
 		}
 
-		return renderTemplate(w, "views/ok", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"views/ok", getLocals(map[string]interface{}{
 			"message": message,
 		}))
 	})
@@ -153,13 +159,13 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 
 func handleShow(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, "views/show", getLocals(map[string]interface{}{}))
+		return renderTemplate(w, conf.AssetsDir+"views/show", getLocals(map[string]interface{}{}))
 	})
 }
 
 func handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, "views/messages/confirm", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"views/messages/confirm", getLocals(map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		}))
 	})
@@ -167,7 +173,7 @@ func handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
 
 func handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, "views/messages/confirm_plain", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"views/messages/confirm_plain", getLocals(map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		}))
 	})

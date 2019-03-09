@@ -30,7 +30,7 @@ func renderTemplate(w io.Writer, file string, locals map[string]interface{}) err
 		ace.FlushCache()
 	}
 
-	template, err := ace.Load("layouts/main", file, nil)
+	template, err := ace.Load(conf.AssetsDir+"layouts/main", file, nil)
 	if err != nil {
 		return errors.Wrap(err, "Failed to compile template")
 	}

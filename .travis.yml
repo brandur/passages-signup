@@ -9,6 +9,12 @@ services:
 before_install:
   - travis_retry go get -u golang.org/x/lint/golint
 
+  - travis_retry curl --silent --output terraform.zip https://releases.hashicorp.com/terraform/0.11.12/terraform_0.11.12_linux_amd64.zip
+  - unzip terraform.zip -d ${HOME}/bin/
+  - chmod +x ${HOME}/bin/terraform
+  - rm -f terraform.zip
+  - terraform --version
+
 before_script:
   - psql -U postgres -c 'CREATE DATABASE "passages-signup-test";'
   - psql -U postgres passages-signup-test < schema.sql
@@ -18,6 +24,13 @@ script:
     go vet &&
     golint -set_exit_status &&
     scripts/check_gofmt.sh &&
+
+    pushd terraform &&
+    cp terraform.tfvars.sample terraform.tfvars &&
+    terraform init &&
+    terraform validate &&
+    popd &&
+
     docker build -t "$DOCKER_REPO" . &&
     scripts/push_docker.sh
 
