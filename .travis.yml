@@ -31,6 +31,9 @@ script:
     terraform validate &&
     popd &&
 
+    # A basic check that the script is well formed.
+    DRY_RUN=true scripts/deploy_do.rb &&
+
     docker build -t "$DOCKER_REPO" . &&
     scripts/push_docker.sh
 
