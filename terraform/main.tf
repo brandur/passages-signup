@@ -31,7 +31,6 @@ locals {
   # non-secret env vars for the program
   enable_lets_encrypt = "true"
   passages_env        = "production"
-  port                = "443"
   public_url          = "http://passages-signup.do.brandur.org"
 }
 
@@ -104,7 +103,7 @@ resource "digitalocean_droplet" "passages_signup" {
 autostart = true
 autorestart = true
 command = ${local.exec_dir}/passages-signup
-environment = ASSETS_DIR="${local.exec_dir}",DATABASE_URL="${var.database_url}",ENABLE_LETS_ENCRYPT="${local.enable_lets_encrypt}",MAILGUN_API_KEY="${var.mailgun_api_key}",PORT="${local.port}",PASSAGES_ENV="${local.passages_env}",PUBLIC_URL="${local.public_url}"
+environment = ASSETS_DIR="${local.exec_dir}",DATABASE_URL="${var.database_url}",ENABLE_LETS_ENCRYPT="${local.enable_lets_encrypt}",MAILGUN_API_KEY="${var.mailgun_api_key}",PASSAGES_ENV="${local.passages_env}",PUBLIC_URL="${local.public_url}"
 stderr_logfile = ${local.log_dir}/err.log
 stdout_logfile = ${local.log_dir}/out.log
     EOT
