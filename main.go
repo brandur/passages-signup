@@ -120,6 +120,8 @@ func main() {
 	}
 
 	if conf.EnableLetsEncrypt {
+		go serveHTTPSRedirect()
+
 		u, err := url.Parse(conf.PublicURL)
 		if err != nil {
 			log.Fatal(err)
@@ -330,6 +332,22 @@ func renderError(w http.ResponseWriter, status int, renderErr error) {
 		// Hopefully it never comes to this
 		log.Printf("Error during error handling: %v", err)
 	}
+}
+
+// serveHTTPSRedirect listens on port 80 and redirects any requests on it to
+// HTTPS. This is only used in the case where Let's Encrypt is activated (when
+// on Heroku we have a router in front of us and don't need to listen on a
+// separate port).
+func serveHTTPSRedirect() {
+	log.Printf("Listening on port 80 and redirecting to HTTPS")
+
+	redirectHandler := http.NewServeMux()
+	redirectHandler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r,
+			fmt.Sprintf("https://%s%s", r.Host, r.URL),
+			http.StatusPermanentRedirect)
+	})
+	log.Fatal(http.ListenAndServe(":80", redirectHandler))
 }
 
 func withErrorHandling(w http.ResponseWriter, fn func() error) {
