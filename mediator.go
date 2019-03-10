@@ -201,14 +201,14 @@ func (c *SignupStarter) sendConfirmationMessage(token string) error {
 	subject := "Passages & Glass signup confirmation"
 
 	buf := new(bytes.Buffer)
-	err := renderTemplate(buf, "views/messages/confirm_plain", locals)
+	err := renderTemplate(buf, conf.AssetsDir+"views/messages/confirm_plain", locals)
 	if err != nil {
 		return errors.Wrap(err, "Error rendering confirmation email (plain)")
 	}
 	confirmPlain := strings.TrimSpace(buf.String())
 
 	buf = new(bytes.Buffer)
-	err = renderTemplate(buf, "views/messages/confirm", locals)
+	err = renderTemplate(buf, conf.AssetsDir+"views/messages/confirm", locals)
 	if err != nil {
 		return errors.Wrap(err, "Error rendering confirmation email (HTML)")
 	}

@@ -251,7 +251,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 			message = fmt.Sprintf("Thank you for signing up! I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
 		}
 
-		return renderTemplate(w, "views/ok", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"views/ok", getLocals(map[string]interface{}{
 			"message": message,
 		}))
 	})
@@ -323,7 +323,7 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 func renderError(w http.ResponseWriter, status int, renderErr error) {
 	w.WriteHeader(status)
 
-	err := renderTemplate(w, "views/error", getLocals(map[string]interface{}{
+	err := renderTemplate(w, conf.AssetsDir+"views/error", getLocals(map[string]interface{}{
 		"error": renderErr.Error(),
 	}))
 	if err != nil {
