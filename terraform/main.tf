@@ -42,7 +42,12 @@ locals {
 }
 
 resource "digitalocean_droplet" "passages_signup" {
-  image      = "ubuntu-18-04-x64"
+  # Get a list of slugs from the API with something like:
+  #
+  #     curl -X GET --silent "https://api.digitalocean.com/v2/images?per_page=999" -H "Authorization: Bearer $DO_TOKEN" | jq '.images[].slug'
+  #
+  image = "ubuntu-18-04-x64"
+
   ipv6       = true
   monitoring = true
   name       = "passages-signup-0"
@@ -122,6 +127,65 @@ stdout_logfile = ${local.log_dir}/out.log
     inline = [
       "supervisorctl reread",
       "supervisorctl update",
+    ]
+  }
+
+  #
+  # iptables
+  #
+  # Note that I started doing this last to give `apt-get` a little more time to
+  # become available for use by Terraform. If ran too early while the droplet
+  # is still coming up, it has trouble acquiring a lock.
+  #
+  # A common solution to the problem is to issue a `sleep` command:
+  #
+  #     https://github.com/hashicorp/terraform/issues/4125
+  #
+
+  provisioner "remote-exec" {
+    inline = [
+      # Locating `iptables-persistent` on Digital Ocean strangely fails some of
+      # the time, but doing a update beforehand seems to address it. See:
+      #
+      #     https://github.com/flynn/flynn/issues/4046
+      #
+      #"apt-get update",
+
+      # iptables-persistent has a very questionable interactive install
+      # process. These lines work around it by pre-answering the questions it
+      # asks. We choose not to save existing IPv4 / IPv6 rules because we'll be
+      # configuring everything from scratch anyway.
+      "echo iptables-persistent iptables-persistent/autosave_v4 boolean false | sudo debconf-set-selections",
+      "echo iptables-persistent iptables-persistent/autosave_v6 boolean false | sudo debconf-set-selections",
+      "apt-get -y install iptables-persistent",
+
+      #
+      # Note all these rules are inserted in order because they append with `-A
+      # input`. It's also possible to insert to a particular position with `-I
+      # input <num>` (view position numbers with `iptables -L --line-numbers`),
+      # but try to stick to append only to keep the list easy to read.
+      #
+      # A pretty good article:
+      #
+      #     https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-using-iptables-on-ubuntu-14-04
+      #
+
+      # Accept loopback traffic.
+      "iptables -A INPUT -i lo -j ACCEPT",
+
+      # Accept existing connections.
+      "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
+
+      # Accept connections for services that we're supposed to be serving.
+      "iptables -A INPUT -p tcp --dport 22 -j ACCEPT",
+      "iptables -A INPUT -p tcp --dport 80 -j ACCEPT",
+      "iptables -A INPUT -p tcp --dport 443 -j ACCEPT",
+
+      # And drop everything else.
+      "iptables -A INPUT -j DROP",
+
+      # Persist the rules that we just defined.
+      "netfilter-persistent save",
     ]
   }
 }
