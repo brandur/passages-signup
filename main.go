@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/brandur/csrf"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/throttled/throttled"
 	"github.com/throttled/throttled/store/memstore"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 const (
@@ -42,6 +44,12 @@ type Conf struct {
 	// state.
 	DatabaseURL string `env:"DATABASE_URL,required"`
 
+	// EnableLetsEncrypt causes the program to listen for HTTPS and
+	// automatically provision a certificate through ACME/Let's Encrypt.
+	//
+	// If enabled, `PORT` is ignored and the program listens on 443.
+	EnableLetsEncrypt bool `env:"ENABLE_LETS_ENCRYPT"`
+
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
 
@@ -50,6 +58,8 @@ type Conf struct {
 	PassagesEnv string `env:"PASSAGES_ENV,default=production"`
 
 	// Port is the port over which to serve HTTP.
+	//
+	// If `ENABLE_LETS_ENCRYPT` is enabled, this option is ignored.
 	Port string `env:"PORT,default=5001"`
 
 	// PublicURL is the public location from which the site is being served.
@@ -109,8 +119,18 @@ func main() {
 		handler = redirectToHTTPS(handler)
 	}
 
-	log.Printf("Listening on port %v", conf.Port)
-	log.Fatal(http.ListenAndServe(":"+conf.Port, handler))
+	if conf.EnableLetsEncrypt {
+		u, err := url.Parse(conf.PublicURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Listening on port 443 with automatic Let's Encrypt certificate")
+		log.Fatal(http.Serve(autocert.NewListener(u.Host), handler))
+	} else {
+		log.Printf("Listening on port %v", conf.Port)
+		log.Fatal(http.ListenAndServe(":"+conf.Port, handler))
+	}
 }
 
 //

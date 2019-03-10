@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:90272eae3bf75d2aa681ff3eee6cf4f49e8b06db533dc9c830ef214e5abbaaf2"
+  digest = "1:9a88883f474d09f1da61894cd8115c7f33988d6941e4f6236324c777aaff8f2c"
   name = "github.com/PuerkitoBio/goquery"
   packages = ["."]
   pruneopts = ""
@@ -10,7 +10,7 @@
   version = "v1.4.1"
 
 [[projects]]
-  digest = "1:4d0cb5aec47a2aec8b8b211540dc59902f8f00d571281356597b41ae349f4885"
+  digest = "1:e3726ad6f38f710e84c8dcd0e830014de6eaeea81f28d91ae898afecc078479a"
   name = "github.com/andybalholm/cascadia"
   packages = ["."]
   pruneopts = ""
@@ -18,7 +18,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:4f2c1a7939b0d703725d395799a583f6c0d17801a1a8b3207e0f160aada64c7a"
+  digest = "1:0b1d07f6cd3aa6c84f5684cc0acc10aaf35e75b9d6da703f77bb67d62e629c93"
   name = "github.com/aymerick/douceur"
   packages = [
     "css",
@@ -38,7 +38,7 @@
   revision = "fb0ef0558bdc7ed27180cbfa8d1197d2f4ece4f4"
 
 [[projects]]
-  digest = "1:0a39ec8bf5629610a4bc7873a92039ee509246da3cef1a0ea60f1ed7e5f9cea5"
+  digest = "1:56c130d885a4aacae1dd9c7b71cfe39912c7ebc1ff7d2b46083c8812996dc43b"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = ""
@@ -46,7 +46,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:dabd16dbd2cc100b33bc4916280439b17f1e9e6e4a45d9c5d4e9c4e2fd0161be"
+  digest = "1:660175e70abad3868119f2c29f43339608d7d3b93c8eb178b812ed330be6c07b"
   name = "github.com/gofrs/uuid"
   packages = ["."]
   pruneopts = ""
@@ -97,7 +97,7 @@
   revision = "6326cbed175e32cd5183be1cc1027e0823c91edb"
 
 [[projects]]
-  digest = "1:11352d3d929e2895eb60ae63ade7279293d42893cb4acb0f9ecde5b8b101fafb"
+  digest = "1:29145d7af4adafd72a79df5e41456ac9e232d5a28c1cd4dacf3ff008a217fc10"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -124,7 +124,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:8e7d1910593db3b38b0c3e4bf3f82bc041dfddfed5f6d36a47f3ad7e72710d8d"
+  digest = "1:3926a4ec9a4ff1a072458451aa2d9b98acd059a45b38f7335d31e06c3d6a0159"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -135,7 +135,7 @@
   version = "v1.1.4"
 
 [[projects]]
-  digest = "1:137933b00683d22f18bff7df642d05b8ea0a03dd48d5581317e2721a24b982e2"
+  digest = "1:2076b543d123f44a3a8b8a7c2b151dd443c4855ce4b5b83b8424671ad0c3d07a"
   name = "github.com/throttled/throttled"
   packages = [
     ".",
@@ -146,7 +146,7 @@
   version = "v2.2.2"
 
 [[projects]]
-  digest = "1:b1e5dc66cd8ad9712eb8fd4dfaecac6ae45cbcde94476c5b64d905c5d789eef7"
+  digest = "1:bf83d7fb8e87f39806ce3550657a8a31bbeb96a35eb105bd98e7362559fba27f"
   name = "github.com/yosssi/ace"
   packages = ["."]
   pruneopts = ""
@@ -155,7 +155,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7324efc9699dcfc0f3914e59c8a74cf1fe3129f303f52b7fa2e479a0a49c5d32"
+  digest = "1:f1282b7b8f47533e585be65217b076a5fa31c8b78aa2a3bd353e2bf5dcd8ce2e"
+  name = "golang.org/x/crypto"
+  packages = [
+    "acme",
+    "acme/autocert",
+  ]
+  pruneopts = ""
+  revision = "c2843e01d9a2bc60bb26ad24e09734fdc2d9ec58"
+
+[[projects]]
+  branch = "master"
+  digest = "1:af3033f983c5f38e29c0f3c9927d96e938896f4d2e14c333d81d75f93eadd78f"
   name = "golang.org/x/net"
   packages = [
     "html",
@@ -165,7 +176,7 @@
   revision = "c10e9556a7bc0e7c942242b606f0acf024ad5d6a"
 
 [[projects]]
-  digest = "1:bd27bd4fc9aa9ff01ae370089fce2753f6a2800f6da5f684c2b82c924048b0f1"
+  digest = "1:91fea695ea6dfbb356a9cfd888739a702e3d6e779219d4d80aa0d95f23f24074"
   name = "gopkg.in/mailgun/mailgun-go.v1"
   packages = ["."]
   pruneopts = ""
@@ -187,6 +198,7 @@
     "github.com/throttled/throttled",
     "github.com/throttled/throttled/store/memstore",
     "github.com/yosssi/ace",
+    "golang.org/x/crypto/acme/autocert",
     "gopkg.in/mailgun/mailgun-go.v1",
   ]
   solver-name = "gps-cdcl"
