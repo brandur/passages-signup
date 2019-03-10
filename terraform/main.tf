@@ -38,7 +38,7 @@ locals {
   # non-secret env vars for the program
   enable_lets_encrypt = "true"
   passages_env        = "production"
-  public_url          = "https://passages-signup.do.brandur.org"
+  public_url          = "https://passages-signup.brandur.org"
 }
 
 resource "digitalocean_droplet" "passages_signup" {
@@ -134,28 +134,29 @@ data "digitalocean_domain" "do" {
   name = "do.brandur.org"
 }
 
+# A records that allow us to identify specific nodes for easy SSH/etc.
 resource "digitalocean_record" "passages_signup_0" {
   domain = "${data.digitalocean_domain.do.name}"
   type   = "A"
   name   = "passages-signup-0"
+  ttl    = 600
   value  = "${digitalocean_droplet.passages_signup.ipv4_address}"
 }
 
-# Keep the root domain as a `CNAME`, even if it's not a very useful one, so
-# that we can more repoint it to something else in the future.
-resource "digitalocean_record" "passages_signup" {
+# An overloaded A record for load balancing between nodes.
+resource "digitalocean_record" "passages_signup_round_robin_0" {
   domain = "${data.digitalocean_domain.do.name}"
-  name   = "passages-signup"
-  type   = "CNAME"
-  value  = "${digitalocean_record.passages_signup_0.fqdn}."
+  type   = "A"
+  name   = "passages-signup" # value the same for all round robin records
+  ttl    = 600
+  value  = "${digitalocean_droplet.passages_signup.ipv4_address}"
 }
 
-# And do the same thing to create a direct subdomain for `brandur.org` at
-# CloudFlare.
+# And a top level CNAME that points back to the round robin A record.
 resource "cloudflare_record" "passages_signup" {
   domain = "brandur.org"
   name   = "passages-signup"
-  value  = "${digitalocean_record.passages_signup_0.fqdn}"
+  value  = "${digitalocean_record.passages_signup_round_robin_0.fqdn}"
   type   = "CNAME"
   ttl    = 1 # magic value 1 sets TTL to "automatic"
 }
