@@ -93,10 +93,11 @@ func main() {
 	var handler http.Handler = r
 
 	options := []csrf.Option{
+		csrf.AllowedOrigin(conf.PublicURL),
+
+		// And also allow the special origin from `brandur.org` which will
+		// cross-post to this app.
 		csrf.AllowedOrigin("https://brandur.org"),
-		csrf.AllowedOrigin("https://passages-signup.brandur.org"),
-		csrf.AllowedOrigin("https://passages-signup.do.brandur.org"),
-		csrf.AllowedOrigin("https://passages-signup.herokuapp.com"),
 	}
 
 	if conf.PassagesEnv != envProduction {
