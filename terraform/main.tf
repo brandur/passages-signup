@@ -3,9 +3,16 @@
 #
 
 # Set in `terraform/terraform.tfvars`.
+variable "cloudflare_email" {}
+variable "cloudflare_token" {}
 variable "database_url" {}
 variable "do_token" {}
 variable "mailgun_api_key" {}
+
+provider "cloudflare" {
+  email = "${var.cloudflare_email}"
+  token = "${var.cloudflare_token}"
+}
 
 provider "digitalocean" {
   token = "${var.do_token}"
@@ -138,7 +145,17 @@ resource "digitalocean_record" "passages_signup_0" {
 # that we can more repoint it to something else in the future.
 resource "digitalocean_record" "passages_signup" {
   domain = "${data.digitalocean_domain.do.name}"
-  type   = "CNAME"
   name   = "passages-signup"
+  type   = "CNAME"
   value  = "${digitalocean_record.passages_signup_0.fqdn}."
+}
+
+# And do the same thing to create a direct subdomain for `brandur.org` at
+# CloudFlare.
+resource "cloudflare_record" "passages_signup" {
+  domain = "brandur.org"
+  name   = "passages-signup"
+  value  = "${digitalocean_record.passages_signup_0.fqdn}"
+  type   = "CNAME"
+  ttl    = 1 # magic value 1 sets TTL to "automatic"
 }

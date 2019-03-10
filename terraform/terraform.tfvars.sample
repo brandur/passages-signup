@@ -1,3 +1,5 @@
+cloudflare_email = ""
+cloudflare_token = ""
 database_url = ""
 do_token = ""
 mailgun_api_key = ""
