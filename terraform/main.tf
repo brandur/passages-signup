@@ -31,7 +31,7 @@ locals {
   # non-secret env vars for the program
   enable_lets_encrypt = "true"
   passages_env        = "production"
-  public_url          = "http://passages-signup.do.brandur.org"
+  public_url          = "https://passages-signup.do.brandur.org"
 }
 
 resource "digitalocean_droplet" "passages_signup" {
