@@ -209,6 +209,15 @@ resource "digitalocean_record" "passages_signup_round_robin_0" {
   value  = "${digitalocean_droplet.passages_signup.ipv4_address}"
 }
 
+# And the same for IPv6.
+resource "digitalocean_record" "passages_signup_ipv6_round_robin_0" {
+  domain = "${data.digitalocean_domain.do.name}"
+  type   = "AAAA"
+  name   = "passages-signup" # value the same for all round robin records
+  ttl    = 600
+  value  = "${digitalocean_droplet.passages_signup.ipv6_address}"
+}
+
 # And a top level CNAME that points back to the round robin A record.
 resource "cloudflare_record" "passages_signup" {
   domain = "brandur.org"
