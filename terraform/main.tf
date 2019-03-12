@@ -144,13 +144,6 @@ stdout_logfile = ${local.log_dir}/out.log
 
   provisioner "remote-exec" {
     inline = [
-      # Locating `iptables-persistent` on Digital Ocean strangely fails some of
-      # the time, but doing a update beforehand seems to address it. See:
-      #
-      #     https://github.com/flynn/flynn/issues/4046
-      #
-      #"apt-get update",
-
       # iptables-persistent has a very questionable interactive install
       # process. These lines work around it by pre-answering the questions it
       # asks. We choose not to save existing IPv4 / IPv6 rules because we'll be
