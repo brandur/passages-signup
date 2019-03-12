@@ -200,7 +200,7 @@ resource "digitalocean_record" "passages_signup_0" {
   value  = "${digitalocean_droplet.passages_signup.ipv4_address}"
 }
 
-# An overloaded A record for load balancing between nodes.
+# An overloaded A/AAAA record for load balancing between nodes.
 resource "digitalocean_record" "passages_signup_round_robin_0" {
   domain = "${data.digitalocean_domain.do.name}"
   type   = "A"
@@ -218,7 +218,7 @@ resource "digitalocean_record" "passages_signup_ipv6_round_robin_0" {
   value  = "${digitalocean_droplet.passages_signup.ipv6_address}"
 }
 
-# And a top level CNAME that points back to the round robin A record.
+# And a top level CNAME that points back to the round robin A/AAAA record.
 resource "cloudflare_record" "passages_signup" {
   domain = "brandur.org"
   name   = "passages-signup"
