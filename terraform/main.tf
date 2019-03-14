@@ -31,9 +31,10 @@ data "digitalocean_ssh_key" "brandur" {
 #
 
 locals {
-  exec_dir            = "/usr/local/passages-signup/"
-  log_dir             = "/var/log/passages-signup/"
-  supervisor_conf_dir = "/etc/supervisor/conf.d/"
+  # don't put trailing slashes on paths
+  exec_dir            = "/usr/local/passages-signup"
+  log_dir             = "/var/log/passages-signup"
+  supervisor_conf_dir = "/etc/supervisor/conf.d"
 
   # non-secret env vars for the program
   enable_lets_encrypt = "true"
