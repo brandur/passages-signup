@@ -87,7 +87,7 @@ func main() {
 
 	// Serves up static files found in public/
 	r.PathPrefix("/public/").Handler(
-		http.StripPrefix("/public/", http.FileServer(http.Dir(conf.AssetsDir+"public"))),
+		http.StripPrefix("/public/", http.FileServer(http.Dir(conf.AssetsDir+"/public"))),
 	)
 
 	var handler http.Handler = r
@@ -174,7 +174,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
 		}
 
-		return renderTemplate(w, conf.AssetsDir+"views/ok", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
 			"message": message,
 		}))
 	})
@@ -182,13 +182,13 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 
 func handleShow(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, conf.AssetsDir+"views/show", getLocals(map[string]interface{}{}))
+		return renderTemplate(w, conf.AssetsDir+"/views/show", getLocals(map[string]interface{}{}))
 	})
 }
 
 func handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, conf.AssetsDir+"views/messages/confirm", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"/views/messages/confirm", getLocals(map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		}))
 	})
@@ -196,7 +196,7 @@ func handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
 
 func handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
 	withErrorHandling(w, func() error {
-		return renderTemplate(w, conf.AssetsDir+"views/messages/confirm_plain", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"/views/messages/confirm_plain", getLocals(map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		}))
 	})
@@ -254,7 +254,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 			message = fmt.Sprintf("Thank you for signing up! I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
 		}
 
-		return renderTemplate(w, conf.AssetsDir+"views/ok", getLocals(map[string]interface{}{
+		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
 			"message": message,
 		}))
 	})
@@ -326,7 +326,7 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 func renderError(w http.ResponseWriter, status int, renderErr error) {
 	w.WriteHeader(status)
 
-	err := renderTemplate(w, conf.AssetsDir+"views/error", getLocals(map[string]interface{}{
+	err := renderTemplate(w, conf.AssetsDir+"/views/error", getLocals(map[string]interface{}{
 		"error": renderErr.Error(),
 	}))
 	if err != nil {
