@@ -65,7 +65,8 @@ type Conf struct {
 	Port string `env:"PORT,default=5001"`
 
 	// PublicURL is the public location from which the site is being served.
-	// This is needed in some places to generate absolute URLs.
+	// This is needed in some places to generate absolute URLs. Also used for
+	// CSRF protection.
 	PublicURL string `env:"PUBLIC_URL,default=https://passages-signup.herokuapp.com"`
 
 	// Some newsletter-specific properties that are set based off the value of Newsletter.
