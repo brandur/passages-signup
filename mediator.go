@@ -69,7 +69,7 @@ func (c *SignupFinisher) Run(tx *sql.Tx) (*SignupFinisherResult, error) {
 	}
 
 	log.Printf("Adding %v to the list\n", *email)
-	err = c.MailAPI.AddMember(conf.mailList, *email)
+	err = c.MailAPI.AddMember(conf.listAddress, *email)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to add email to list")
 	}

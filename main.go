@@ -71,7 +71,6 @@ type Conf struct {
 
 	// Some newsletter-specific properties that are set based off the value of Newsletter.
 	listAddress           string
-	mailList              string
 	newsletterName        NewsletterName
 	newsletterDescription NewsletterDescription
 }
@@ -118,7 +117,6 @@ func main() {
 			conf.NewsletterID, nanoglyphID, passagesID)
 	}
 	conf.listAddress = string(conf.NewsletterID) + "@" + mailDomain
-	conf.mailList = string(conf.NewsletterID) + "@" + mailDomain
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleShow)
