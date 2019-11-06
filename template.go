@@ -1,8 +1,11 @@
 package main
 
 import (
+	"html/template"
 	"io"
 	"log"
+	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/yosssi/ace"
@@ -13,6 +16,8 @@ import (
 // parameter for this particular run.
 func getLocals(locals map[string]interface{}) map[string]interface{} {
 	defaults := map[string]interface{}{
+		"newsletterDescription": string(conf.newsletterDescription),
+		"newsletterName": string(conf.newsletterName),
 		"publicURL": conf.PublicURL,
 	}
 
@@ -30,7 +35,11 @@ func renderTemplate(w io.Writer, file string, locals map[string]interface{}) err
 		ace.FlushCache()
 	}
 
-	template, err := ace.Load(conf.AssetsDir+"/layouts/main", file, nil)
+	template, err := ace.Load(conf.AssetsDir+"/layouts/main", file, &ace.Options{
+		FuncMap: template.FuncMap{
+			"StripHTML": stripHTML,
+		},
+	})
 	if err != nil {
 		return errors.Wrap(err, "Failed to compile template")
 	}
@@ -45,4 +54,12 @@ func renderTemplate(w io.Writer, file string, locals map[string]interface{}) err
 	}
 
 	return nil
+}
+
+var stripHTMLRE = regexp.MustCompile(`<[^>]*>`)
+
+// stripHTML does an extremely basic replacement of all HTML tags with empty
+// strings. Not suitable for use with user input.
+func stripHTML(content string) string {
+	return strings.TrimSpace(stripHTMLRE.ReplaceAllString(content, ""))
 }

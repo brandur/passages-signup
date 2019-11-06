@@ -3,7 +3,7 @@
 
 html lang="en"
   head
-    title Passages & Glass newsletter signup
+    title {{.newsletterName}} newsletter signup
 
     meta content="text/html; charset=utf-8" http-equiv="Content-Type"
     meta name="viewport" content="width=device-width, initial-scale=1.0"
@@ -42,8 +42,8 @@ html lang="en"
 
   body
     #container
-      #passages Passages & Glass
-      p Hello! I recently received a request to add this email address to the <a href="https://brandur.org/newsletter"><em>Passages & Glass</em> mailing list</a>.
+      #passages {{.newsletterName}}
+      p Hello! I recently received a request to add this email address to the <a href="https://brandur.org/newsletter"><em>{{.newsletterName}}</em> mailing list</a>.
 
       p If you'd still like to join, please <a href="{{.publicURL}}/confirm/{{.token}}">confirm by clicking here</a>.
 

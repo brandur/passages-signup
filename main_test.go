@@ -16,6 +16,7 @@ import (
 
 func init() {
 	conf = Conf{
+		AssetsDir:   "./",
 		DatabaseURL: testhelpers.DatabaseURL,
 
 		// Make sure that we're in testing so that we don't hit the actual Mailgun

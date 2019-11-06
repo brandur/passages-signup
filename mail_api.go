@@ -98,7 +98,7 @@ func (a *MailgunAPI) AddMember(list, email string) error {
 // SendMessage sends a message an email address.
 func (a *MailgunAPI) SendMessage(email, subject, contentsPlain, contentsHTML string) error {
 	message := a.mg.NewMessage(
-		fromAddress,
+		string(conf.newsletterName) + " <" + conf.listAddress + ">",
 		subject,
 		contentsPlain)
 	message.AddRecipient(email)

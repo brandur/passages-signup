@@ -22,10 +22,7 @@ const (
 	envProduction = "production"
 	envTesting    = "testing"
 
-	fromAddress    = "Passages & Glass <" + listAddress + ">"
-	listAddress    = "passages@" + mailDomain
 	mailDomain     = "list.brandur.org"
-	mailList       = "passages@" + mailDomain
 	replyToAddress = "brandur@brandur.org"
 )
 
@@ -53,6 +50,11 @@ type Conf struct {
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
 
+	// Newsletter is the newsletter to send. Should be either `nanoglyph` or
+	// `passages` and defaults to the latter. Along with one of the available
+	// values it should also be the identifier of the list in Mailgun.
+	NewsletterID NewsletterID `env:"NEWSLETTER_ID,default=passages"`
+
 	// PassagesEnv determines the running environment of the app. Set to
 	// development to disable template caching and CSRF protection.
 	PassagesEnv string `env:"PASSAGES_ENV,default=production"`
@@ -65,7 +67,33 @@ type Conf struct {
 	// PublicURL is the public location from which the site is being served.
 	// This is needed in some places to generate absolute URLs.
 	PublicURL string `env:"PUBLIC_URL,default=https://passages-signup.herokuapp.com"`
+
+	// Some newsletter-specific properties that are set based off the value of Newsletter.
+	listAddress           string
+	mailList              string
+	newsletterName        NewsletterName
+	newsletterDescription NewsletterDescription
 }
+
+// NewsletterID identifies a newsletter and its values are used as options for
+// an incoming environmental variable.
+type NewsletterID string
+
+// NewsletterName represents the name of a newsletter.
+type NewsletterName string
+
+// NewsletterDescription represents the description of a newsletter.
+type NewsletterDescription string
+
+const (
+	nanoglyphID          NewsletterID          = "nanoglyph"
+	nanoglyphName        NewsletterName        = "Nanoglyph"
+	nanoglyphDescription NewsletterDescription = NewsletterDescription(`<em>` + string(nanoglyphName) + `</em> is a TODO`)
+
+	passagesID          NewsletterID          = "passages"
+	passagesName        NewsletterName        = "Passages & Glass"
+	passagesDescription NewsletterDescription = NewsletterDescription(`<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">Brandur</a>. It's sent rarely – just a few times a year.`)
+)
 
 var conf Conf
 
@@ -74,6 +102,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	switch conf.NewsletterID {
+	case nanoglyphID:
+		conf.newsletterName = nanoglyphName
+		conf.newsletterDescription = nanoglyphDescription
+
+	case passagesID:
+		conf.newsletterName = passagesName
+		conf.newsletterDescription = passagesDescription
+
+	default:
+		log.Fatalf("Unknown newsletter configuration (`NEWSLETTER_ID`): %s (should be either %s or %s)",
+			conf.NewsletterID, nanoglyphID, passagesID)
+	}
+	conf.listAddress = string(conf.NewsletterID) + "@" + mailDomain
+	conf.mailList = string(conf.NewsletterID) + "@" + mailDomain
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleShow)
@@ -171,7 +215,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			message = "We couldn't find that confirmation token."
 		} else {
-			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>Passages & Glass</em> is published.", res.Email)
+			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>%s</em> is published.", res.Email, conf.newsletterName)
 		}
 
 		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
@@ -249,9 +293,9 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if res.ConfirmationRateLimited {
-			message = fmt.Sprintf("Thank you for signing up. I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>Passages & Glass</em>. If you can't find it, try checking your spam folder.", email)
+			message = fmt.Sprintf("Thank you for signing up. I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.", email, conf.newsletterName)
 		} else {
-			message = fmt.Sprintf("Thank you for signing up! I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>Passages & Glass</em>.", email)
+			message = fmt.Sprintf("Thank you for signing up! I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.", email, conf.newsletterName)
 		}
 
 		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{

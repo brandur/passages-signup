@@ -1,4 +1,4 @@
 = content main
-  #passages Passages & Glass
+  #passages {{.newsletterName}}
   p
     {{HTML .message}}

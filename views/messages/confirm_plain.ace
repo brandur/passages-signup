@@ -3,7 +3,7 @@
 
 |
   Hello! I recently received a request to add this email address to the
-  _Passages & Glass_ mailing list:
+  _{{.newsletterName}}_ mailing list:
 
       https://brandur.org/newsletter
 

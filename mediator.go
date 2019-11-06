@@ -69,7 +69,7 @@ func (c *SignupFinisher) Run(tx *sql.Tx) (*SignupFinisherResult, error) {
 	}
 
 	log.Printf("Adding %v to the list\n", *email)
-	err = c.MailAPI.AddMember(mailList, *email)
+	err = c.MailAPI.AddMember(conf.mailList, *email)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to add email to list")
 	}
@@ -198,7 +198,7 @@ func (c *SignupStarter) sendConfirmationMessage(token string) error {
 		"token": token,
 	})
 
-	subject := "Passages & Glass signup confirmation"
+	subject := string(conf.newsletterName) + " signup confirmation"
 
 	buf := new(bytes.Buffer)
 	err := renderTemplate(buf, conf.AssetsDir+"/views/messages/confirm_plain", locals)
