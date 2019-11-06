@@ -88,7 +88,7 @@ type NewsletterDescription string
 const (
 	nanoglyphID          NewsletterID          = "nanoglyph"
 	nanoglyphName        NewsletterName        = "Nanoglyph"
-	nanoglyphDescription NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a TODO`
+	nanoglyphDescription NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software and technology written by <a href="https://brandur.org">Brandur</a>.`
 
 	passagesID          NewsletterID          = "passages"
 	passagesName        NewsletterName        = "Passages & Glass"
