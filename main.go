@@ -89,11 +89,11 @@ type NewsletterDescription string
 const (
 	nanoglyphID          NewsletterID          = "nanoglyph"
 	nanoglyphName        NewsletterName        = "Nanoglyph"
-	nanoglyphDescription NewsletterDescription = NewsletterDescription(`<em>` + string(nanoglyphName) + `</em> is a TODO`)
+	nanoglyphDescription NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a TODO`
 
 	passagesID          NewsletterID          = "passages"
 	passagesName        NewsletterName        = "Passages & Glass"
-	passagesDescription NewsletterDescription = NewsletterDescription(`<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">Brandur</a>. It's sent rarely – just a few times a year.`)
+	passagesDescription NewsletterDescription = `<em>` + NewsletterDescription(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">Brandur</a>. It's sent rarely – just a few times a year.`
 )
 
 var conf Conf
