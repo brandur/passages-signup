@@ -47,6 +47,11 @@ type Conf struct {
 	// If enabled, `PORT` is ignored and the program listens on 443.
 	EnableLetsEncrypt bool `env:"ENABLE_LETS_ENCRYPT"`
 
+	// EnableRateLimiter activates rate limiting on source IP to make it more
+	// difficult for attackers to burn through resource limits. It is on by
+	// default.
+	EnableRateLimiter bool `env:"ENABLE_RATE_LIMITER,default=true"`
+
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
 
@@ -153,11 +158,13 @@ func main() {
 
 	// Use a rate limiter to prevent enumeration of email addresses and so it's
 	// harder to maliciously burn through my Mailgun API limit.
-	rateLimiter, err := getRateLimiter()
-	if err != nil {
-		log.Fatal(err)
+	if conf.EnableRateLimiter {
+		rateLimiter, err := getRateLimiter()
+		if err != nil {
+			log.Fatal(err)
+		}
+		handler = rateLimiter.RateLimit(handler)
 	}
-	handler = rateLimiter.RateLimit(handler)
 
 	if conf.PassagesEnv == envProduction {
 		handler = redirectToHTTPS(handler)
