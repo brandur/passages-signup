@@ -116,28 +116,28 @@ jobs:
         uses: actions/checkout@master
 
       - name: "Copy .tfvars"
-        run: cp terraform/terraform.tfvars.sample terraform/terraform.tfvars
+        run: cp ./deploy/terraform/terraform.tfvars.sample ./deploy/terraform/terraform.tfvars
 
       - name: "Terraform Format"
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: "latest"
           tf_actions_subcommand: "fmt"
-          tf_actions_working_dir: "./terraform"
+          tf_actions_working_dir: "./deploy/terraform"
 
       - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: "latest"
           tf_actions_subcommand: "init"
-          tf_actions_working_dir: "./terraform"
+          tf_actions_working_dir: "./deploy/terraform"
 
       - name: "Terraform Validate"
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: "latest"
           tf_actions_subcommand: "validate"
-          tf_actions_working_dir: "./terraform"
+          tf_actions_working_dir: "./deploy/terraform"
 
       # Requires working CloudFlare/Digital Ocean keys.
       # - name: "Terraform Plan"
@@ -145,4 +145,4 @@ jobs:
       #   with:
       #     tf_actions_version: "latest"
       #     tf_actions_subcommand: "plan"
-      #     tf_actions_working_dir: "./terraform"
+      #     tf_actions_working_dir: "./deploy/terraform"
