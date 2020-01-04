@@ -12,9 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
-    env:
-      GOPATH: "/home/runner/work/passages-signup/go"
-
     services:
       postgres:
         image: postgres:12.0
@@ -50,13 +47,12 @@ jobs:
       - name: Debug
         run: |
           echo "github.ref=${{ github.ref }}"
+          echo "go env GOPATH=$(go env GOPATH)"
           echo "pwd=$(pwd)"
           echo "HOME=${HOME}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-          echo "GOPATH=${GOPATH}"
-          echo "GOROOT=${GOROOT}"
 
-      - name: Install
+      - name: "Go: Install"
         run: go install
 
       - name: "Create database: passages-signup-test"
@@ -77,7 +73,7 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: postgres
 
-      - name: Test
+      - name: "Go: Test"
         run: go test -v
         env:
           PGHOST: localhost
@@ -90,7 +86,7 @@ jobs:
         run: scripts/check_gofmt.sh
 
       - name: "Check: Golint"
-        run: "$GOPATH/bin/golint -set_exit_status"
+        run: "$(go env GOPATH)/bin/golint -set_exit_status"
 
   image-push-docker-hub:
     runs-on: ubuntu-latest
