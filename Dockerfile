@@ -41,6 +41,7 @@ ENV BUILD_DIR=/go/src/passages-signup
 COPY --from=builder $BUILD_DIR/*.sql /
 COPY --from=builder $BUILD_DIR/passages-signup /
 COPY --from=builder $BUILD_DIR/layouts/ /layouts/
+COPY --from=builder $BUILD_DIR/public/ /public/
 COPY --from=builder $BUILD_DIR/views/ /views/
 
 ENV PORT 8082
