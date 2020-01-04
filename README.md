@@ -45,5 +45,3 @@ Hosted on Heroku at [`passages-signup`][heroku].
     heroku addons:add heroku-postgresql:hobby-dev -r heroku-nanoglyph
     heroku pg:psql -r heroku-nanoglyph < schema.sql
     git push heroku master
-
-[heroku]: 
