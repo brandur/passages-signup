@@ -12,7 +12,7 @@ Install GCP SDK:
 Set default project/region:
 
     gcloud config set project passages-signup
-    gcloud config set run/region us-central
+    gcloud config set run/region us-central1
 
 Build and push container image:
 
