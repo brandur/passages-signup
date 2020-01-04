@@ -90,5 +90,5 @@ jobs:
         run: scripts/check_gofmt.sh
 
       - name: "Check: Golint"
-        run: golint -set_exit_status
+        run: "$GOPATH/bin/golint -set_exit_status"
 
