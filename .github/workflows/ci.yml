@@ -82,6 +82,9 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: postgres
 
+      - name: "Go: Vet"
+        run: go vet
+
       - name: "Check: Gofmt"
         run: scripts/check_gofmt.sh
 
