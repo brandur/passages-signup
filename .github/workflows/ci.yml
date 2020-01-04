@@ -92,6 +92,21 @@ jobs:
       - name: "Check: Golint"
         run: "$GOPATH/bin/golint -set_exit_status"
 
+  image-push-docker-hub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@master
+
+      - name: Publish to Registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: brandur/passages-signup
+          username: ${{ secrets.DockerHubUsername }}
+          password: ${{ secrets.DockerHubPassword }}
+
   terraform:
     runs-on: ubuntu-latest
     timeout-minutes: 5
