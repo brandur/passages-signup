@@ -1,4 +1,5 @@
-# passages-signup [![Build Status](https://travis-ci.org/brandur/passages-signup.svg?branch=master)](https://travis-ci.org/brandur/passages-signup)
+# passages-signup [![Build Status](https://github.com/brandur/passages-signup/workflows/passages-signup%20CI/badge.svg)](https://github.com/brandur/passages-signup/actions)
+
 
 A basic backend for the signup form of my newsletter
 _Passages & Glass_. The rest of its site is statically
