@@ -3,9 +3,10 @@
 *
 !/*.go
 !/*.sql
+!/go.mod
+!/go.sum
 !/layouts/
 !/public/
-!/vendor/
 !/views/
 
 # Send all Go files except test files which we don't need for the build.
