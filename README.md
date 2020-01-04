@@ -45,7 +45,6 @@ Hosted on Heroku at [`passages-signup`][heroku].
 ## Heroku deploy
 
     heroku addons:add heroku-postgresql:hobby-dev -r heroku-nanoglyph
-    heroku config:set CSRF_SECRET=<entropy> MAILGUN_API_KEY=<key> NEWSLETTER_ID=passages PASSAGES_ENV=production PUBLIC_URL=https://passages-signup.herokuapp.com
     heroku pg:psql -r heroku-nanoglyph < schema.sql
     git push heroku master
 
