@@ -10,12 +10,12 @@ variable "do_token" {}
 variable "mailgun_api_key" {}
 
 provider "cloudflare" {
-  email = "${var.cloudflare_email}"
-  token = "${var.cloudflare_token}"
+  email     = var.cloudflare_email
+  api_token = var.cloudflare_token
 }
 
 provider "digitalocean" {
-  token = "${var.do_token}"
+  token = var.do_token
 }
 
 #
@@ -194,36 +194,36 @@ data "digitalocean_domain" "do" {
 
 # A records that allow us to identify specific nodes for easy SSH/etc.
 resource "digitalocean_record" "passages_signup_0" {
-  domain = "${data.digitalocean_domain.do.name}"
+  domain = data.digitalocean_domain.do.name
   type   = "A"
   name   = "passages-signup-0"
   ttl    = 600
-  value  = "${digitalocean_droplet.passages_signup.ipv4_address}"
+  value  = digitalocean_droplet.passages_signup.ipv4_address
 }
 
 # An overloaded A/AAAA record for load balancing between nodes.
 resource "digitalocean_record" "passages_signup_round_robin_0" {
-  domain = "${data.digitalocean_domain.do.name}"
+  domain = data.digitalocean_domain.do.name
   type   = "A"
   name   = "passages-signup" # value the same for all round robin records
   ttl    = 600
-  value  = "${digitalocean_droplet.passages_signup.ipv4_address}"
+  value  = digitalocean_droplet.passages_signup.ipv4_address
 }
 
 # And the same for IPv6.
 resource "digitalocean_record" "passages_signup_ipv6_round_robin_0" {
-  domain = "${data.digitalocean_domain.do.name}"
+  domain = data.digitalocean_domain.do.name
   type   = "AAAA"
   name   = "passages-signup" # value the same for all round robin records
   ttl    = 600
-  value  = "${digitalocean_droplet.passages_signup.ipv6_address}"
+  value  = digitalocean_droplet.passages_signup.ipv6_address
 }
 
 # And a top level CNAME that points back to the round robin A/AAAA record.
 resource "cloudflare_record" "passages_signup" {
-  domain = "brandur.org"
-  name   = "passages-signup"
-  value  = "${digitalocean_record.passages_signup_round_robin_0.fqdn}"
-  type   = "CNAME"
-  ttl    = 1 # magic value 1 sets TTL to "automatic"
+  name    = "passages-signup"
+  value   = digitalocean_record.passages_signup_round_robin_0.fqdn
+  type    = "CNAME"
+  ttl     = 1 # magic value 1 sets TTL to "automatic"
+  zone_id = "brandur.org"
 }
