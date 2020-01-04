@@ -31,13 +31,6 @@ Open your browser to [localhost:5001](http://localhost:5001).
     createdb passages-signup-test
     psql passages-signup-test < schema.sql
 
-## Vendoring Dependencies
-
-Dependencies are managed with dep. New ones can be vendored
-using these commands:
-
-    dep ensure -add github.com/foo/bar
-
 ## Operations
 
 Hosted on Heroku at [`passages-signup`][heroku].
