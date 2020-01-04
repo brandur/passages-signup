@@ -9,9 +9,10 @@ Install GCP SDK:
 
     brew cask install google-cloud-sdk
 
-Set default project:
+Set default project/region:
 
     gcloud config set project passages-signup
+    gcloud config set run/region us-central
 
 Build and push container image:
 
