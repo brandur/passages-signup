@@ -33,6 +33,11 @@ Open your browser to [localhost:5001](http://localhost:5001).
 
 ## Operations
 
+* Cloud Run service [`nanoglyph-signup`](https://nanoglyph-signup-5slhbjdbla-uc.a.run.app/)
+* Cloud Run service [`passages-signup`](https://passages-signup-5slhbjdbla-uc.a.run.app/).
+* Heroku app [`nanoglyph-signup`](https://nanoglyph-signup.herokuapp.com).
+* Heroku app [`passages-signup`](https://passages-signup.herokuapp.com).
+
 Hosted on Heroku at [`passages-signup`][heroku].
 
 ## Heroku deploy
@@ -41,4 +46,4 @@ Hosted on Heroku at [`passages-signup`][heroku].
     heroku pg:psql -r heroku-nanoglyph < schema.sql
     git push heroku master
 
-[heroku]: https://passages-signup.herokuapp.com
+[heroku]: 
