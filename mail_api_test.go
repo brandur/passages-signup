@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mailgun/mailgun-go/v3"
 	assert "github.com/stretchr/testify/require"
-	"gopkg.in/mailgun/mailgun-go.v1"
 )
 
 func TestInterpretMailgunError(t *testing.T) {

@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
-	"gopkg.in/mailgun/mailgun-go.v1"
+	"github.com/mailgun/mailgun-go/v3"
 )
 
 //
@@ -78,14 +79,14 @@ type MailgunAPI struct {
 // API key.
 func NewMailgunAPI(mailDomain, apiKey string) *MailgunAPI {
 	return &MailgunAPI{
-		mg: mailgun.NewMailgun(mailDomain, apiKey, ""),
+		mg: mailgun.NewMailgun(mailDomain, apiKey),
 	}
 }
 
 // AddMember adds a new member to a mailing list.
 func (a *MailgunAPI) AddMember(list, email string) error {
 	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-	err := a.mg.CreateMember(true, list, mailgun.Member{
+	err := a.mg.CreateMember(context.Background(), true, list, mailgun.Member{
 		Address: email,
 		Vars: map[string]interface{}{
 			"passages-signup":           true,
@@ -105,7 +106,7 @@ func (a *MailgunAPI) SendMessage(email, subject, contentsPlain, contentsHTML str
 	message.SetHtml(contentsHTML)
 	message.SetReplyTo(replyToAddress)
 
-	resp, _, err := a.mg.Send(message)
+	resp, _, err := a.mg.Send(context.Background(), message)
 	log.Printf(`Sent to: %s (response: "%s") (error: "%s")`,
 		email, resp, err)
 
