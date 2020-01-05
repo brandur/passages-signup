@@ -4,5 +4,8 @@
     input type="email" name="email" placeholder="Email"
     input type="submit" value="Sign up for newsletter"
   p#what What is this?
-  p#about
-    | {{HTML .newsletterDescription}}
+  #about
+    p
+      | {{HTML .newsletterDescription}}
+    p
+      | {{HTML .newsletterDescription2}}

@@ -67,9 +67,10 @@ type Conf struct {
 	PublicURL string `env:"PUBLIC_URL,default=https://passages-signup.herokuapp.com"`
 
 	// Some newsletter-specific properties that are set based off the value of Newsletter.
-	listAddress           string
-	newsletterName        NewsletterName
-	newsletterDescription NewsletterDescription
+	listAddress            string
+	newsletterName         NewsletterName
+	newsletterDescription  NewsletterDescription // First paragraph: Shown on web + in Twitter card
+	newsletterDescription2 NewsletterDescription // Second paragraph: Shown only on web
 }
 
 // NewsletterID identifies a newsletter and its values are used as options for
@@ -83,13 +84,15 @@ type NewsletterName string
 type NewsletterDescription string
 
 const (
-	nanoglyphID          NewsletterID          = "nanoglyph"
-	nanoglyphName        NewsletterName        = "Nanoglyph"
-	nanoglyphDescription NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. Written by <a href="https://brandur.org">Brandur</a>.`
+	nanoglyphID           NewsletterID          = "nanoglyph"
+	nanoglyphName         NewsletterName        = "Nanoglyph"
+	nanoglyphDescription  NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">@brandur</a>.`
+	nanoglyphDescription2 NewsletterDescription = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed free of spam or other misuse of your personal information.`
 
-	passagesID          NewsletterID          = "passages"
-	passagesName        NewsletterName        = "Passages & Glass"
-	passagesDescription NewsletterDescription = `<em>` + NewsletterDescription(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">Brandur</a>. It's sent rarely – just a few times a year.`
+	passagesID           NewsletterID          = "passages"
+	passagesName         NewsletterName        = "Passages & Glass"
+	passagesDescription  NewsletterDescription = `<em>` + NewsletterDescription(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">@brandur</a>. It's sent rarely – just a few times a year.`
+	passagesDescription2 NewsletterDescription = ``
 )
 
 var conf Conf
@@ -104,10 +107,12 @@ func main() {
 	case nanoglyphID:
 		conf.newsletterName = nanoglyphName
 		conf.newsletterDescription = nanoglyphDescription
+		conf.newsletterDescription2 = nanoglyphDescription2
 
 	case passagesID:
 		conf.newsletterName = passagesName
 		conf.newsletterDescription = passagesDescription
+		conf.newsletterDescription2 = passagesDescription2
 
 	default:
 		log.Fatalf("Unknown newsletter configuration (`NEWSLETTER_ID`): %s (should be either %s or %s)",
@@ -279,7 +284,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if res.ConfirmationRateLimited {
-			message = fmt.Sprintf("<p>Thank you for signing up.</p><p>I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", email, conf.newsletterName)
+			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", email, conf.newsletterName)
 		} else {
 			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.</p>", email, conf.newsletterName)
 		}
