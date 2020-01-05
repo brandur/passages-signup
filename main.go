@@ -206,7 +206,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			message = "We couldn't find that confirmation token."
 		} else {
-			message = fmt.Sprintf("<p>Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>%s</em> is published.</p>", res.Email, conf.newsletterName)
+			message = fmt.Sprintf(`<p>You've been signed up successfully.</p><p>You'll receive your first edition of <em>%s</em> at <strong>%s</strong> the next time one is published.</p>`, conf.newsletterName, res.Email)
 		}
 
 		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
