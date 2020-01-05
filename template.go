@@ -16,9 +16,10 @@ import (
 // parameter for this particular run.
 func getLocals(locals map[string]interface{}) map[string]interface{} {
 	defaults := map[string]interface{}{
-		"newsletterDescription": string(conf.newsletterDescription),
-		"newsletterName":        string(conf.newsletterName),
-		"publicURL":             conf.PublicURL,
+		"newsletterDescription":  string(conf.newsletterDescription),
+		"newsletterDescription2": string(conf.newsletterDescription2),
+		"newsletterName":         string(conf.newsletterName),
+		"publicURL":              conf.PublicURL,
 	}
 
 	for k, v := range locals {

@@ -11,7 +11,9 @@ html lang="en"
 
     = css
       body {
-        color: #4d4d4d;
+        background: #000 url('/public/background-nanoglyph.jpg') no-repeat center center fixed; 
+        background-size: cover;
+        color: #fff;
         font-family: Helvetica, sans-serif;
         font-size: 18px;
         font-weight: 300;
@@ -19,12 +21,12 @@ html lang="en"
       }
 
       h1, h2, h3, h4 {
-        color: black;
+        color: #fff;
       }
 
       a, a:hover, a:visited {
-        border-bottom: 1px solid #000;
-        color: black;
+        border-bottom: 4px solid #777;
+        color: #fff;
         font-weight: bold;
         text-decoration: none;
       }
@@ -34,7 +36,7 @@ html lang="en"
       }
 
       input[type=email] {
-        border: 1px solid #4d4d4d;
+        border: 1px solid #000;
         font-family: Helvetica, sans-serif;
         font-size: 18px;
         font-weight: 300;
@@ -50,9 +52,8 @@ html lang="en"
       }
 
       input[type=submit] {
-        background: #000;
+        background: #fff;
         border: 0;
-        color: #fff;
         height: 40px;
         font-size: 11px;
         letter-spacing: 0.5px;
@@ -68,10 +69,11 @@ html lang="en"
       }
 
       #about {
-        margin-top: 0;
+        margin-top: -10px;
       }
 
       #container {
+        background: rgb(0,0,0,0.6);
         margin: 0 auto;
         max-width: 550px;
         padding: 30px;
@@ -93,10 +95,15 @@ html lang="en"
       }
 
       #what {
-        color: #000;
         font-size: 24px;
         font-weight: bold;
         margin-bottom: 0;
+      }
+
+      @media handheld, only screen and (max-width: 767px), only screen and (max-device-width: 767px) {
+        body {
+          background-image: none;
+        }
       }
 
   body
