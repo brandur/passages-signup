@@ -1,0 +1,6 @@
+meta name="twitter:card" content="summary_large_image"
+meta name="twitter:site" content="@brandur"
+meta name="twitter:creator" content="@brandur"
+meta name="twitter:title" content="{{.newsletterName}}"
+meta name="twitter:description" content="{{StripHTML .newsletterDescription}}"
+meta name="twitter:image" content="{{.publicURL}}/public/twitter@2x.jpg"
