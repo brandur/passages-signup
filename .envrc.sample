@@ -1,4 +1,4 @@
-DATABASE_URL=postgres://localhost/passages-signup?sslmode=disable
-MAILGUN_API_KEY=
-NEWSLETTER_ID=passages
-PASSAGES_ENV=testing
+export DATABASE_URL=postgres://localhost/passages-signup?sslmode=disable
+export MAILGUN_API_KEY=
+export NEWSLETTER_ID=passages
+export PASSAGES_ENV=testing
