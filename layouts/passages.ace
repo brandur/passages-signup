@@ -1,0 +1,105 @@
+= doctype html
+
+html lang="en"
+  head
+    title {{.newsletterName}} newsletter signup
+
+    meta content="text/html; charset=utf-8" http-equiv="Content-Type"
+    meta name="viewport" content="width=device-width, initial-scale=1.0"
+
+    = include views/_twitter_card .
+
+    = css
+      body {
+        color: #4d4d4d;
+        font-family: Helvetica, sans-serif;
+        font-size: 18px;
+        font-weight: 300;
+        line-height: 1.5;
+      }
+
+      h1, h2, h3, h4 {
+        color: black;
+      }
+
+      a, a:hover, a:visited {
+        border-bottom: 1px solid #000;
+        color: black;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      a:hover {
+        border-bottom: none;
+      }
+
+      input[type=email] {
+        border: 1px solid #4d4d4d;
+        font-family: Helvetica, sans-serif;
+        font-size: 18px;
+        font-weight: 300;
+
+        /* just so we understand that the height is meant to be the same as the
+         * submit button: constant - border - padding */
+        height: calc(40px - 2 * 1px - 2 * 3px);
+
+        line-height: 1.5;
+        margin: 10px 10px 10px 0;
+        padding: 3px 6px;
+        vertical-align: bottom;
+      }
+
+      input[type=submit] {
+        background: #000;
+        border: 0;
+        color: #fff;
+        height: 40px;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        margin: 10px 0 10px 0;
+        padding: 0 25px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      p {
+        hyphens: auto;
+        -webkit-hyphens: auto;
+      }
+
+      #about {
+        margin-top: 0;
+      }
+
+      #container {
+        margin: 0 auto;
+        max-width: 550px;
+        padding: 30px;
+      }
+
+      #flex {
+        align-items: center;
+        display: flex;
+        height: 100%;
+        justify-content: center;
+        position: absolute;
+        width: 100%;
+      }
+
+      #passages {
+        font-size: 12px;
+        margin: 10px 0;
+        text-transform: uppercase;
+      }
+
+      #what {
+        color: #000;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 0;
+      }
+
+  body
+    #flex
+      #container
+        = yield main

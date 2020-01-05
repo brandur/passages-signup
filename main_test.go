@@ -16,8 +16,9 @@ import (
 
 func init() {
 	conf = Conf{
-		AssetsDir:   "./",
-		DatabaseURL: testhelpers.DatabaseURL,
+		AssetsDir:    "./",
+		DatabaseURL:  testhelpers.DatabaseURL,
+		NewsletterID: passagesID,
 
 		// Make sure that we're in testing so that we don't hit the actual Mailgun
 		// API
