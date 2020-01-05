@@ -86,13 +86,13 @@ type NewsletterDescription string
 const (
 	nanoglyphID           NewsletterID          = "nanoglyph"
 	nanoglyphName         NewsletterName        = "Nanoglyph"
-	nanoglyphDescription  NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">@brandur</a>.`
+	nanoglyphDescription  NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">brandur</a>.`
 	nanoglyphDescription2 NewsletterDescription = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed spam free.`
 
 	passagesID           NewsletterID          = "passages"
 	passagesName         NewsletterName        = "Passages & Glass"
-	passagesDescription  NewsletterDescription = `<em>` + NewsletterDescription(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">@brandur</a>. It's sent rarely – just a few times a year.`
-	passagesDescription2 NewsletterDescription = ``
+	passagesDescription  NewsletterDescription = `<em>` + NewsletterDescription(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
+	passagesDescription2 NewsletterDescription = `Sign up above to have new editions sent to you. Easily unsubscribe with a single click at any time.`
 )
 
 var conf Conf
