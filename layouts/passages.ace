@@ -11,6 +11,8 @@ html lang="en"
 
     = css
       body {
+        background: #000 url('/public/background-passages.jpg') no-repeat center center fixed; 
+        background-size: cover;
         color: #4d4d4d;
         font-family: Helvetica, sans-serif;
         font-size: 18px;
@@ -23,7 +25,7 @@ html lang="en"
       }
 
       a, a:hover, a:visited {
-        border-bottom: 1px solid #000;
+        border-bottom: 3px solid #000;
         color: black;
         font-weight: bold;
         text-decoration: none;
@@ -72,6 +74,7 @@ html lang="en"
       }
 
       #container {
+        background: rgb(255,255,255,0.6);
         margin: 0 auto;
         max-width: 550px;
         padding: 30px;
