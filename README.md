@@ -5,6 +5,8 @@ A backend for the signup forms of my newsletters _Nanoglyph_ and _Passages & Gla
 
 ## Setup
 
+Install Go, [Direnv](https://direnv.net/docs/installation.html), and Postgres.
+
 Clone, configure, install, and run:
 
 ``` sh
@@ -12,13 +14,13 @@ go get -u github.com/brandur/passages-signup
 
 cd $GOPATH/src/github.com/brandur/passages-signup
 
-cp .env.sample .env
+cp .envrc.sample .envrc
 createdb passages-signup
 psql passages-signup < schema.sql
 
-# open .env; edit MAILGUN_API_KEY
+# open `.envrc`; edit MAILGUN_API_KEY
 
-go install && forego start -p 5001 web
+go install && $(go env GOPATH)/bin/passages-signup
 ```
 
 Open your browser to [localhost:5001](http://localhost:5001).
