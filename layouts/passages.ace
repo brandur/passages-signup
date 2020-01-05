@@ -102,6 +102,12 @@ html lang="en"
         margin-bottom: 0;
       }
 
+      @media handheld, only screen and (max-width: 767px), only screen and (max-device-width: 767px) {
+        body {
+          background-image: none;
+        }
+      }
+
   body
     #flex
       #container
