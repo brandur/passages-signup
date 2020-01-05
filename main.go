@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/brandur/csrf"
 	"github.com/gorilla/mux"
@@ -36,7 +37,8 @@ type Conf struct {
 	// Defaults to the current directory.
 	AssetsDir string `env:"ASSETS_DIR,default=./"`
 
-	// DatabaseMaxOpenConns is the maximum number of open database connections allowed.
+	// DatabaseMaxOpenConns is the maximum number of open database connections
+	// allowed.
 	DatabaseMaxOpenConns int `env:"DATABASE_MAX_OPEN_CONNS,default=5"`
 
 	// DatabaseURL is the URL to the Postgres database used to store program
@@ -379,6 +381,7 @@ func openDB() (*sql.DB, error) {
 		return nil, err
 	}
 
+	db.SetConnMaxLifetime(60 * time.Second)
 	db.SetMaxOpenConns(conf.DatabaseMaxOpenConns)
 
 	return db, nil
