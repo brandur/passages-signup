@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/brandur/csrf"
 	"github.com/gorilla/mux"
@@ -34,6 +35,9 @@ type Conf struct {
 	//
 	// Defaults to the current directory.
 	AssetsDir string `env:"ASSETS_DIR,default=./"`
+
+	// DatabaseMaxOpenConns is the maximum number of open database connections allowed.
+	DatabaseMaxOpenConns int `env:"DATABASE_MAX_OPEN_CONNS,default=5"`
 
 	// DatabaseURL is the URL to the Postgres database used to store program
 	// state.
@@ -180,7 +184,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		token := vars["token"]
 
-		db, err := sql.Open("postgres", conf.DatabaseURL)
+		db, err := openDB()
 		if err != nil {
 			return err
 		}
@@ -261,7 +265,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 		email = strings.TrimSpace(email)
 
-		db, err := sql.Open("postgres", conf.DatabaseURL)
+		db, err := openDB()
 		if err != nil {
 			return err
 		}
@@ -342,6 +346,42 @@ func getMailAPI() MailAPI {
 	}
 
 	return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
+}
+
+// Not initialized by default. Access through openDB instead.
+var db *sql.DB
+var dbMutex sync.RWMutex
+
+// Lazily gets a database pointer.
+func openDB() (*sql.DB, error) {
+	dbMutex.RLock()
+	var localDB = db
+	dbMutex.RUnlock()
+
+	if localDB != nil {
+		return db, nil
+	}
+
+	// No database connection yet, so initialize one.
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
+
+	// Multiple Goroutines may have passed through the read phase nearly
+	// simultaneously, so verify that the connection still hasn't been set
+	// first.
+	if db != nil {
+		return db, nil
+	}
+
+	var err error
+	db, err = sql.Open("postgres", conf.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxOpenConns(conf.DatabaseMaxOpenConns)
+
+	return db, nil
 }
 
 func redirectToHTTPS(next http.Handler) http.Handler {
