@@ -85,7 +85,23 @@ func TestHandleConfirm(t *testing.T) {
 	})
 }
 
-func TestHandleShow(t *testing.T) {
+func TestHandleShow_Nanoglyph(t *testing.T) {
+	conf.NewsletterID = nanoglyphID
+
+	req := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	handleShow(w, req)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	_, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+}
+
+func TestHandleShow_Passages(t *testing.T) {
+	conf.NewsletterID = passagesID
+
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
 	handleShow(w, req)
