@@ -1,4 +1,3 @@
 = content main
   #passages {{.newsletterName}}
-  p
-    {{HTML .message}}
+  {{HTML .message}}

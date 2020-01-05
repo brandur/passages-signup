@@ -201,7 +201,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			message = "We couldn't find that confirmation token."
 		} else {
-			message = fmt.Sprintf("Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>%s</em> is published.", res.Email, conf.newsletterName)
+			message = fmt.Sprintf("<p>Thank you for signing up. You'll receive your first newsletter at <strong>%s</strong> the next time an edition of <em>%s</em> is published.</p>", res.Email, conf.newsletterName)
 		}
 
 		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
@@ -279,9 +279,9 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if res.ConfirmationRateLimited {
-			message = fmt.Sprintf("Thank you for signing up. I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.", email, conf.newsletterName)
+			message = fmt.Sprintf("<p>Thank you for signing up.</p><p>I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", email, conf.newsletterName)
 		} else {
-			message = fmt.Sprintf("Thank you for signing up! I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.", email, conf.newsletterName)
+			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.</p>", email, conf.newsletterName)
 		}
 
 		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
