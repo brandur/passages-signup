@@ -87,7 +87,7 @@ const (
 	nanoglyphID           NewsletterID          = "nanoglyph"
 	nanoglyphName         NewsletterName        = "Nanoglyph"
 	nanoglyphDescription  NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">@brandur</a>.`
-	nanoglyphDescription2 NewsletterDescription = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed free of spam or other misuse of your personal information.`
+	nanoglyphDescription2 NewsletterDescription = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed spam free.`
 
 	passagesID           NewsletterID          = "passages"
 	passagesName         NewsletterName        = "Passages & Glass"
