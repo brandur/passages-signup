@@ -16,13 +16,10 @@ require (
 	github.com/joeshaw/envdecode v0.0.0-20170502020559-6326cbed175e
 	github.com/lib/pq v1.0.0
 	github.com/mailgun/mailgun-go/v3 v3.6.3
-	github.com/onsi/ginkgo v1.11.0 // indirect
-	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.4.0
 	github.com/throttled/throttled v2.2.2+incompatible
 	github.com/yosssi/ace v0.0.5
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/net v0.0.0-20181102091132-c10e9556a7bc // indirect
-	gopkg.in/mailgun/mailgun-go.v1 v1.1.0
+	gopkg.in/yaml.v2 v2.2.4 // indirect
 )

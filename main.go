@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/brandur/csrf"
@@ -15,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/throttled/throttled"
 	"github.com/throttled/throttled/store/memstore"
-	"golang.org/x/crypto/acme/autocert"
 )
 
 const (
@@ -40,12 +38,6 @@ type Conf struct {
 	// DatabaseURL is the URL to the Postgres database used to store program
 	// state.
 	DatabaseURL string `env:"DATABASE_URL,required"`
-
-	// EnableLetsEncrypt causes the program to listen for HTTPS and
-	// automatically provision a certificate through ACME/Let's Encrypt.
-	//
-	// If enabled, `PORT` is ignored and the program listens on 443.
-	EnableLetsEncrypt bool `env:"ENABLE_LETS_ENCRYPT"`
 
 	// EnableRateLimiter activates rate limiting on source IP to make it more
 	// difficult for attackers to burn through resource limits. It is on by
@@ -170,20 +162,8 @@ func main() {
 		handler = redirectToHTTPS(handler)
 	}
 
-	if conf.EnableLetsEncrypt {
-		go serveHTTPSRedirect()
-
-		u, err := url.Parse(conf.PublicURL)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Printf("Listening on port 443 with automatic Let's Encrypt certificate")
-		log.Fatal(http.Serve(autocert.NewListener(u.Host), handler))
-	} else {
-		log.Printf("Listening on port %v", conf.Port)
-		log.Fatal(http.ListenAndServe(":"+conf.Port, handler))
-	}
+	log.Printf("Listening on port %v", conf.Port)
+	log.Fatal(http.ListenAndServe(":"+conf.Port, handler))
 }
 
 //
@@ -383,22 +363,6 @@ func renderError(w http.ResponseWriter, status int, renderErr error) {
 		// Hopefully it never comes to this
 		log.Printf("Error during error handling: %v", err)
 	}
-}
-
-// serveHTTPSRedirect listens on port 80 and redirects any requests on it to
-// HTTPS. This is only used in the case where Let's Encrypt is activated (when
-// on Heroku we have a router in front of us and don't need to listen on a
-// separate port).
-func serveHTTPSRedirect() {
-	log.Printf("Listening on port 80 and redirecting to HTTPS")
-
-	redirectHandler := http.NewServeMux()
-	redirectHandler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r,
-			fmt.Sprintf("https://%s%s", r.Host, r.URL),
-			http.StatusPermanentRedirect)
-	})
-	log.Fatal(http.ListenAndServe(":80", redirectHandler))
 }
 
 func withErrorHandling(w http.ResponseWriter, fn func() error) {
