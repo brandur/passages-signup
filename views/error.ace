@@ -2,4 +2,5 @@
   #passages {{.newsletterName}}
   p Unfortunately, an error occurred. If this problem persists, please email <strong>brandur@brandur.org</strong>.
   p
+    strong Error:  
     {{HTML .error}}
