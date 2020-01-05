@@ -1,7 +1,7 @@
 # passages-signup [![Build Status](https://github.com/brandur/passages-signup/workflows/passages-signup%20CI/badge.svg)](https://github.com/brandur/passages-signup/actions)
 
 
-A basic backend for the signup form of my newsletter _Passages & Glass_. The rest of its site is statically hosted, so this program is designed to hold an API key and talk to the Mailgun API.
+A backend for the signup forms of my newsletters _Nanoglyph_ and _Passages & Glass_. Tracks email address through the process of confirming them, then adds them to a list through Mailgun's API.
 
 ## Setup
 
