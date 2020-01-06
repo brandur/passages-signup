@@ -98,7 +98,7 @@ const (
 	passagesName         NewsletterName = "Passages & Glass"
 	passagesDescription  string         = `<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
 	passagesDescription2 string         = `Sign up above to have new editions sent to you. Easily unsubscribe with a single click at any time.`
-	passagesAboutPhoto   string         = "Background photo is a distorted selection of wild California grass taken along Mission Creek in San Francisco."
+	passagesAboutPhoto   string         = "Background photo is a distorted selection of wild California grass. Taken along Mission Creek in San Francisco."
 )
 
 var conf Conf
