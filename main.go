@@ -77,6 +77,7 @@ type Conf struct {
 	newsletterName         NewsletterName
 	newsletterDescription  string // First paragraph: Shown on web + in Twitter card
 	newsletterDescription2 string // Second paragraph: Shown only on web
+	newsletterAboutPhoto   string
 }
 
 // NewsletterID identifies a newsletter and its values are used as options for
@@ -91,11 +92,13 @@ const (
 	nanoglyphName         NewsletterName = "Nanoglyph"
 	nanoglyphDescription  string         = `<em>` + string(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">brandur</a>.`
 	nanoglyphDescription2 string         = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed spam free.`
+	nanoglyphAboutPhoto   string         = "Background photo is the <em>Blue Planet Sky</em> exhibit at the 21st Century Museum of Contemporary Art in Kanazawa, Japan. (And taken on a day that saw much more grey than blue.)"
 
 	passagesID           NewsletterID   = "passages"
 	passagesName         NewsletterName = "Passages & Glass"
 	passagesDescription  string         = `<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
 	passagesDescription2 string         = `Sign up above to have new editions sent to you. Easily unsubscribe with a single click at any time.`
+	passagesAboutPhoto   string         = "Background photo is a distorted selection of wild California grass taken along Mission Creek in San Francisco."
 )
 
 var conf Conf
@@ -111,11 +114,13 @@ func main() {
 		conf.newsletterName = nanoglyphName
 		conf.newsletterDescription = nanoglyphDescription
 		conf.newsletterDescription2 = nanoglyphDescription2
+		conf.newsletterAboutPhoto = nanoglyphAboutPhoto
 
 	case passagesID:
 		conf.newsletterName = passagesName
 		conf.newsletterDescription = passagesDescription
 		conf.newsletterDescription2 = passagesDescription2
+		conf.newsletterAboutPhoto = passagesAboutPhoto
 
 	default:
 		log.Fatalf("Unknown newsletter configuration (`NEWSLETTER_ID`): %s (should be either %s or %s)",
