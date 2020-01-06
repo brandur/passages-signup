@@ -75,8 +75,8 @@ type Conf struct {
 	// Some newsletter-specific properties that are set based off the value of Newsletter.
 	listAddress            string
 	newsletterName         NewsletterName
-	newsletterDescription  NewsletterDescription // First paragraph: Shown on web + in Twitter card
-	newsletterDescription2 NewsletterDescription // Second paragraph: Shown only on web
+	newsletterDescription  string // First paragraph: Shown on web + in Twitter card
+	newsletterDescription2 string // Second paragraph: Shown only on web
 }
 
 // NewsletterID identifies a newsletter and its values are used as options for
@@ -86,19 +86,16 @@ type NewsletterID string
 // NewsletterName represents the name of a newsletter.
 type NewsletterName string
 
-// NewsletterDescription represents the description of a newsletter.
-type NewsletterDescription string
-
 const (
-	nanoglyphID           NewsletterID          = "nanoglyph"
-	nanoglyphName         NewsletterName        = "Nanoglyph"
-	nanoglyphDescription  NewsletterDescription = `<em>` + NewsletterDescription(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">brandur</a>.`
-	nanoglyphDescription2 NewsletterDescription = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed spam free.`
+	nanoglyphID           NewsletterID   = "nanoglyph"
+	nanoglyphName         NewsletterName = "Nanoglyph"
+	nanoglyphDescription  string         = `<em>` + string(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">brandur</a>.`
+	nanoglyphDescription2 string         = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed spam free.`
 
-	passagesID           NewsletterID          = "passages"
-	passagesName         NewsletterName        = "Passages & Glass"
-	passagesDescription  NewsletterDescription = `<em>` + NewsletterDescription(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
-	passagesDescription2 NewsletterDescription = `Sign up above to have new editions sent to you. Easily unsubscribe with a single click at any time.`
+	passagesID           NewsletterID   = "passages"
+	passagesName         NewsletterName = "Passages & Glass"
+	passagesDescription  string         = `<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
+	passagesDescription2 string         = `Sign up above to have new editions sent to you. Easily unsubscribe with a single click at any time.`
 )
 
 var conf Conf
