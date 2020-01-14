@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/brandur/csrf"
 	"github.com/gorilla/mux"
@@ -188,7 +186,7 @@ func handleConfirm(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		token := vars["token"]
 
-		db, err := openDB()
+		db, err := OpenDB()
 		if err != nil {
 			return err
 		}
@@ -269,7 +267,7 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 		email = strings.TrimSpace(email)
 
-		db, err := openDB()
+		db, err := OpenDB()
 		if err != nil {
 			return err
 		}
@@ -350,43 +348,6 @@ func getMailAPI() MailAPI {
 	}
 
 	return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
-}
-
-// Not initialized by default. Access through openDB instead.
-var db *sql.DB
-var dbMutex sync.RWMutex
-
-// Lazily gets a database pointer.
-func openDB() (*sql.DB, error) {
-	dbMutex.RLock()
-	var localDB = db
-	dbMutex.RUnlock()
-
-	if localDB != nil {
-		return db, nil
-	}
-
-	// No database connection yet, so initialize one.
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
-
-	// Multiple Goroutines may have passed through the read phase nearly
-	// simultaneously, so verify that the connection still hasn't been set
-	// first.
-	if db != nil {
-		return db, nil
-	}
-
-	var err error
-	db, err = sql.Open("postgres", conf.DatabaseURL)
-	if err != nil {
-		return nil, err
-	}
-
-	db.SetConnMaxLifetime(60 * time.Second)
-	db.SetMaxOpenConns(conf.DatabaseMaxOpenConns)
-
-	return db, nil
 }
 
 func redirectToHTTPS(next http.Handler) http.Handler {

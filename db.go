@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -12,6 +14,45 @@ import (
 // transaction. It's used to make database-related code cleaner and safer by
 // guaranteeing that opened transactions always either commit or rollback.
 type TxFn func(*sql.Tx) error
+
+// Not initialized by default. Access through openDB instead.
+var db *sql.DB
+var dbMutex sync.RWMutex
+
+// OpenDB lazily gets a database pointer. It ensures only one is created for
+// the current program and is safe for concurrent access.
+func OpenDB() (*sql.DB, error) {
+	dbMutex.RLock()
+	var localDB = db
+	dbMutex.RUnlock()
+
+	if localDB != nil {
+		return db, nil
+	}
+
+	// No database connection yet, so initialize one.
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
+
+	// Multiple Goroutines may have passed through the read phase nearly
+	// simultaneously (even if only one will have acquired the lock), so verify
+	// that the connection still hasn't been set by a previous Goroutine that
+	// beat us.
+	if db != nil {
+		return db, nil
+	}
+
+	var err error
+	db, err = sql.Open("postgres", conf.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetConnMaxLifetime(60 * time.Second)
+	db.SetMaxOpenConns(conf.DatabaseMaxOpenConns)
+
+	return db, nil
+}
 
 // WithTransaction creates a new transaction and handles its rollback or
 // commit.
