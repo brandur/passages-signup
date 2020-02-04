@@ -331,10 +331,15 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 		return nil, err
 	}
 
+	deniedHandler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Rate limit exceeded. Sorry about that -- please try again in a few seconds.", 429)
+	}))
+
 	// Vary based off of remote IP.
 	return &throttled.HTTPRateLimiter{
-		RateLimiter: rateLimiter,
-		VaryBy:      &throttled.VaryBy{RemoteAddr: true},
+		DeniedHandler: deniedHandler,
+		RateLimiter:   rateLimiter,
+		VaryBy:        &throttled.VaryBy{RemoteAddr: true},
 	}, nil
 }
 
