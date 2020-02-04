@@ -321,10 +321,9 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 		return nil, err
 	}
 
-	// Start at 3 allowed tokens and refill at a rate of 3 per second.
 	quota := throttled.RateQuota{
-		MaxBurst: 3,
-		MaxRate:  throttled.PerSec(3),
+		MaxBurst: 20,
+		MaxRate:  throttled.PerSec(5),
 	}
 
 	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
