@@ -36,3 +36,5 @@ Open your browser to [localhost:5001](http://localhost:5001).
 * Cloud Run service [`passages-signup`](https://passages-signup-5slhbjdbla-uc.a.run.app/) (project `passages-signup`).
 * Heroku app [`nanoglyph-signup`](https://nanoglyph-signup.herokuapp.com).
 * Heroku app [`passages-signup`](https://passages-signup.herokuapp.com).
+
+See more instructions in the [`deploy/`](./deploy) directory.
