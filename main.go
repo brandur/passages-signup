@@ -89,13 +89,13 @@ const (
 	nanoglyphID           NewsletterID   = "nanoglyph"
 	nanoglyphName         NewsletterName = "Nanoglyph"
 	nanoglyphDescription  string         = `<em>` + string(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">brandur</a>.`
-	nanoglyphDescription2 string         = `Sign up above to have it delivered fresh to your inbox when new editions are published. Guaranteed spam free.`
+	nanoglyphDescription2 string         = `Check out a <a href="https://brandur.org/nanoglyphs/006-moma-rain">sample edition</a>. Sign up above to have new ones delivered fresh to your inbox whenever they're published.`
 	nanoglyphAboutPhoto   string         = "Background photo is the <em>Blue Planet Sky</em> exhibit at the 21st Century Museum of Contemporary Art in Kanazawa, Japan. (And taken on a day that saw much more grey than blue.)"
 
 	passagesID           NewsletterID   = "passages"
 	passagesName         NewsletterName = "Passages & Glass"
 	passagesDescription  string         = `<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
-	passagesDescription2 string         = `Sign up above to have new editions sent to you. Easily unsubscribe with a single click at any time.`
+	passagesDescription2 string         = `Check out a <a href="https://brandur.org/passages/003-koya">sample edition</a>. Sign up above to have new ones sent to you. Easily unsubscribe at any time with a single click.`
 	passagesAboutPhoto   string         = "Background photo is a distorted selection of wild California grass. Taken along Mission Creek in San Francisco."
 )
 
