@@ -90,6 +90,32 @@ jobs:
       - name: "Check: Golint"
         run: "$(go env GOPATH)/bin/golint -set_exit_status"
 
+      - name: "GCP: setup-gcloud"
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '285.0.0'
+          project_id: passages-signup
+          service_account_email: ${{ secrets.GCPEmail }}
+          service_account_key: ${{ secrets.GCPKey }}
+          export_default_credentials: true
+        if: github.ref == 'refs/heads/master'
+
+      - name: "GCP: gcloud info"
+        run: gcloud info
+        if: github.ref == 'refs/heads/master'
+
+      - name: "GCP: Publish image"
+        run: gcloud builds submit --tag gcr.io/passages-signup/passages-signup
+        if: github.ref == 'refs/heads/master'
+
+      - name: "GCP: Deploy nanoglyph-signup"
+        run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed nanoglyph-signup
+        if: github.ref == 'refs/heads/master'
+
+      - name: "GCP: Deploy passages-signup"
+        run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed passages-signup
+        if: github.ref == 'refs/heads/master'
+
   image-push-docker-hub:
     runs-on: ubuntu-latest
     timeout-minutes: 5
