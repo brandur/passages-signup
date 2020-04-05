@@ -50,6 +50,14 @@ jobs:
           echo "HOME=${HOME}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
 
+      - name: "Cache Go modules"
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: "Go: Install"
         run: go install
 
