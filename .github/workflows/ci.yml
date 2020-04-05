@@ -90,6 +90,7 @@ jobs:
         run: "$(go env GOPATH)/bin/golint -set_exit_status"
 
   deploy-google-cloud-run:
+    if: github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -116,25 +117,21 @@ jobs:
           #
           service_account_email: ${{ secrets.GCPEmail }}
           service_account_key: ${{ secrets.GCPKey }}
-        if: github.ref == 'refs/heads/master'
 
       - name: "GCP: gcloud info"
         run: gcloud info
-        if: github.ref == 'refs/heads/master'
 
       - name: "GCP: Publish image"
         run: gcloud builds submit --tag gcr.io/passages-signup/passages-signup
-        if: github.ref == 'refs/heads/master'
 
       - name: "GCP: Deploy nanoglyph-signup"
         run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed --region us-central1 nanoglyph-signup
-        if: github.ref == 'refs/heads/master'
 
       - name: "GCP: Deploy passages-signup"
         run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed --region us-central1 passages-signup
-        if: github.ref == 'refs/heads/master'
 
   image-push-docker-hub:
+    if: github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
