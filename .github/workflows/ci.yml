@@ -90,6 +90,12 @@ jobs:
       - name: "Check: Golint"
         run: "$(go env GOPATH)/bin/golint -set_exit_status"
 
+  deploy-google-cloud-run:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
       - name: "GCP: setup-gcloud"
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
@@ -117,6 +123,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
 
   image-push-docker-hub:
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -124,7 +131,7 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@master
 
-      - name: Publish to Registry
+      - name: "Docker Hub: Publish image"
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: brandur/passages-signup
@@ -142,21 +149,21 @@ jobs:
       - name: "Copy .tfvars"
         run: cp ./deploy/terraform/terraform.tfvars.sample ./deploy/terraform/terraform.tfvars
 
-      - name: "Terraform Format"
+      - name: "Terraform: Format"
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: "latest"
           tf_actions_subcommand: "fmt"
           tf_actions_working_dir: "./deploy/terraform"
 
-      - name: 'Terraform Init'
+      - name: 'Terraform: Init'
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: "latest"
           tf_actions_subcommand: "init"
           tf_actions_working_dir: "./deploy/terraform"
 
-      - name: "Terraform Validate"
+      - name: "Terraform: Validate"
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: "latest"
