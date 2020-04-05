@@ -42,7 +42,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-          path: go/src/github.com/brandur/passages-signup
 
       - name: Debug
         run: |
