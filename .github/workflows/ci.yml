@@ -99,11 +99,21 @@ jobs:
       - name: "GCP: setup-gcloud"
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
-          version: '285.0.0'
+          export_default_credentials: true
           project_id: passages-signup
+          version: '285.0.0'
+
+          # Getting a key is kind of insane and involves generating a JSON file
+          # in the console, then base64 encoding it. See creating a a service account key here:
+          #
+          #     https://cloud.google.com/iam/docs/creating-managing-service-account-keys
+          #
+          # Then getting the string itself will involve something like:
+          #
+          #     cat my-key.json | base64
+          #
           service_account_email: ${{ secrets.GCPEmail }}
           service_account_key: ${{ secrets.GCPKey }}
-          export_default_credentials: true
         if: github.ref == 'refs/heads/master'
 
       - name: "GCP: gcloud info"
