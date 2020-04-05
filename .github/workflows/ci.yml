@@ -39,9 +39,8 @@ jobs:
         # tooling.
         run: sudo apt-get install postgresql-client
 
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+      - name: 'Checkout'
+        uses: actions/checkout@v2
 
       - name: Debug
         run: |
@@ -96,6 +95,9 @@ jobs:
     timeout-minutes: 5
 
     steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+
       - name: "GCP: setup-gcloud"
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
