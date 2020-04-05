@@ -109,11 +109,11 @@ jobs:
         if: github.ref == 'refs/heads/master'
 
       - name: "GCP: Deploy nanoglyph-signup"
-        run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed nanoglyph-signup
+        run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed --region us-central1 nanoglyph-signup
         if: github.ref == 'refs/heads/master'
 
       - name: "GCP: Deploy passages-signup"
-        run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed passages-signup
+        run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed --region us-central1 passages-signup
         if: github.ref == 'refs/heads/master'
 
   image-push-docker-hub:
