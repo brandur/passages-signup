@@ -32,8 +32,13 @@ Open your browser to [localhost:5001](http://localhost:5001).
 
 ## Operations
 
+The primary host is Google Cloud Platform, and the GitHub Actions build automatically deploys `master` to these apps:
+
 * Cloud Run service [`nanoglyph-signup`](https://nanoglyph-signup-5slhbjdbla-uc.a.run.app/) (project `passages-signup`).
 * Cloud Run service [`passages-signup`](https://passages-signup-5slhbjdbla-uc.a.run.app/) (project `passages-signup`).
+
+It's also cross-deployed to Heroku for now, but these versions of the app may not be as up-to-date:
+
 * Heroku app [`nanoglyph-signup`](https://nanoglyph-signup.herokuapp.com).
 * Heroku app [`passages-signup`](https://passages-signup.herokuapp.com).
 
