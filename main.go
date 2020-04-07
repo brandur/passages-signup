@@ -321,8 +321,8 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 	}
 
 	quota := throttled.RateQuota{
-		MaxBurst: 30,
-		MaxRate:  throttled.PerSec(10),
+		MaxBurst: 20,
+		MaxRate:  throttled.PerSec(5),
 	}
 
 	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
