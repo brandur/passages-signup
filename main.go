@@ -160,6 +160,7 @@ func main() {
 	// Use a rate limiter to prevent enumeration of email addresses and so it's
 	// harder to maliciously burn through my Mailgun API limit.
 	if conf.EnableRateLimiter {
+		log.Printf("Enabling memory-backed rate limiting")
 		rateLimiter, err := getRateLimiter()
 		if err != nil {
 			log.Fatal(err)
