@@ -61,8 +61,6 @@ type Conf struct {
 	PassagesEnv string `env:"PASSAGES_ENV,default=production"`
 
 	// Port is the port over which to serve HTTP.
-	//
-	// If `ENABLE_LETS_ENCRYPT` is enabled, this option is ignored.
 	Port string `env:"PORT,default=5001"`
 
 	// PublicURL is the public location from which the site is being served.
