@@ -13,6 +13,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// If we've already tried to confirm a signup by sending a confirmation
+	// email, we won't try to send another confirmation email for at least this
+	// many hours, even if a user submits the forma again.
+	noResendHours = 24
+)
+
 var (
 	// ErrInvalidEmail is the error that's returned if a given email address
 	// didn't match a regex to check for email validity.
@@ -167,7 +174,7 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 	// We do want to eventually sent another email in case the user signed up
 	// before but failed to complete the process, and now wants to try again.
 	// The duration parameter may need to be tweaked.
-	if (*lastSentAt).After(time.Now().Add(-24 * time.Hour)) {
+	if (*lastSentAt).After(time.Now().Add(-noResendHours * time.Hour)) {
 		log.Printf("Last send was too soon so not re-sending confirmation")
 		return &SignupStarterResult{ConfirmationRateLimited: true}, nil
 	}
