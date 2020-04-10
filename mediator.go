@@ -14,6 +14,10 @@ import (
 )
 
 const (
+	// Maximum of number of times we'll ever try to send a confirmation email
+	// to a particular email address.
+	maxNumSignupAttempts = 3
+
 	// If we've already tried to confirm a signup by sending a confirmation
 	// email, we won't try to send another confirmation email for at least this
 	// many hours, even if a user submits the forma again.
@@ -44,6 +48,8 @@ type SignupFinisher struct {
 
 // Run executes the mediator.
 func (c *SignupFinisher) Run(tx *sql.Tx) (*SignupFinisherResult, error) {
+	log.Printf("SignupFinisher running")
+
 	var id *int64
 	var email *string
 	err := tx.QueryRow(`
@@ -110,6 +116,8 @@ type SignupStarter struct {
 
 // Run executes the mediator.
 func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
+	log.Printf("SignupStarter running")
+
 	// We know that a simple regexp validation won't detect all invalid email
 	// addresses, so to some extent we'll be relying on Mailgun to do some of
 	// that work for us.
@@ -118,13 +126,15 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 	}
 
 	var id *int64
+	var completedAt *time.Time
 	var lastSentAt *time.Time
+	var numAttempts *int64
 	var token *string
 	err := tx.QueryRow(`
-		SELECT id, last_sent_at, token
+		SELECT id, completed_at, last_sent_at, num_attempts, token
 		FROM signup
 		WHERE email = $1
-	`, c.Email).Scan(&id, &lastSentAt, &token)
+	`, c.Email).Scan(&id, &completedAt, &lastSentAt, &numAttempts, &token)
 
 	// The happy path: if we have nothing in the database, then just run the
 	// process from scratch.
@@ -159,6 +169,11 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 		return nil, errors.Wrap(err, "Failed to query for existing record")
 	}
 
+	if completedAt == nil && *numAttempts >= maxNumSignupAttempts {
+		log.Printf("Too many signup attempts for email: %s", c.Email)
+		return &SignupStarterResult{MaxNumAttempts: true}, nil
+	}
+
 	// Note that we don't bail early even if the record appears to be completed
 	// because if the user was previously subscribed but then unsubscribed, we
 	// won't know about the unsubscription because it happens entirely through
@@ -175,16 +190,26 @@ func (c *SignupStarter) Run(tx *sql.Tx) (*SignupStarterResult, error) {
 	// before but failed to complete the process, and now wants to try again.
 	// The duration parameter may need to be tweaked.
 	if (*lastSentAt).After(time.Now().Add(-noResendHours * time.Hour)) {
-		log.Printf("Last send was too soon so not re-sending confirmation")
+		log.Printf("Last send was too soon so not re-sending confirmation, %s",
+			c.Email)
 		return &SignupStarterResult{ConfirmationRateLimited: true}, nil
 	}
 
-	// Otherwise, update the timestamp and re-send the confirmation message.
+	// Update the number of attempts, but only if this user hasn't already
+	// completed the signup flow.
+	if completedAt == nil {
+		*numAttempts++
+	}
+
+	// Otherwise, update the timestamp and number of attempts. Re-send the
+	// confirmation message.
 	_, err = tx.Exec(`
 		UPDATE signup
-		SET last_sent_at = NOW()
-		WHERE id = $1
-	`, *id)
+		SET
+		  last_sent_at = NOW(),
+		  num_attempts = $1
+		WHERE id = $2
+	`, *numAttempts, *id)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to update existing record")
 	}
@@ -235,5 +260,6 @@ func (c *SignupStarter) sendConfirmationMessage(token string) error {
 type SignupStarterResult struct {
 	ConfirmationRateLimited bool
 	ConfirmationResent      bool
+	MaxNumAttempts          bool
 	NewSignup               bool
 }

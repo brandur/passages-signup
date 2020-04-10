@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE signup
+ADD COLUMN num_attempts BIGINT NOT NULL DEFAULT 1;
+
+END;

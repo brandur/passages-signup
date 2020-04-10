@@ -2,6 +2,7 @@ package testhelpers
 
 import (
 	"database/sql"
+	"log"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -15,6 +16,7 @@ const (
 
 // ConnectDB opens a connection to the test database.
 func ConnectDB(t *testing.T) *sql.DB {
+	log.Printf("Connecting to test database")
 	db, err := sql.Open("postgres", DatabaseURL)
 	assert.NoError(t, err)
 	return db
@@ -34,17 +36,23 @@ func ResetDB(t *testing.T, db *sql.DB) {
 // rolls back the transaction. This is useful in test environments where we
 // want to discard all results within a single test case.
 func WithTestTransaction(t *testing.T, db *sql.DB, fn func(*sql.Tx)) {
+	log.Printf("Starting test transaction")
 	tx, err := db.Begin()
 	assert.NoError(t, err)
 
+	log.Printf("Running test body in test transaction")
+	fn(tx)
+
+	doRollback := func() {
+		err = tx.Rollback()
+		t.Logf("Error rolling back test transaction: %v", err)
+	}
+	doRollback()
+
 	defer func() {
 		if p := recover(); p != nil {
-			err := tx.Rollback()
-			assert.NoError(t, err)
+			doRollback()
 			panic(p)
-		} else {
-			err := tx.Rollback()
-			assert.NoError(t, err)
 		}
 	}()
 }

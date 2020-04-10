@@ -3,7 +3,7 @@
 Add a database:
 
     heroku addons:add heroku-postgresql:hobby-dev -r heroku-nanoglyph
-    heroku pg:psql -r heroku-nanoglyph < schema.sql
+    heroku pg:psql -r heroku-nanoglyph < sql/schema.sql
 
 Assign remotes:
 
