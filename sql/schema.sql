@@ -8,6 +8,7 @@ CREATE TABLE signup (
     completed_at TIMESTAMPTZ,
     email        VARCHAR(500) NOT NULL UNIQUE,
     last_sent_at TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    num_attempts BIGINT       NOT NULL DEFAULT 1,
     token        VARCHAR(100) NOT NULL UNIQUE
 );
 

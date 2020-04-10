@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -86,6 +87,7 @@ func TestHandleConfirm(t *testing.T) {
 }
 
 func TestHandleShow_Nanoglyph(t *testing.T) {
+	conf.DatabaseURL = testhelpers.DatabaseURL
 	conf.NewsletterID = nanoglyphID
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -100,6 +102,7 @@ func TestHandleShow_Nanoglyph(t *testing.T) {
 }
 
 func TestHandleShow_Passages(t *testing.T) {
+	conf.DatabaseURL = testhelpers.DatabaseURL
 	conf.NewsletterID = passagesID
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -114,6 +117,8 @@ func TestHandleShow_Passages(t *testing.T) {
 }
 
 func TestHandleSubmit(t *testing.T) {
+	conf.DatabaseURL = testhelpers.DatabaseURL
+
 	testCases := []struct {
 		name       string
 		verb, path string
@@ -147,10 +152,12 @@ func TestHandleSubmit(t *testing.T) {
 			handleSubmit(w, req)
 
 			resp := w.Result()
-			assert.Equal(t, tc.wantStatus, resp.StatusCode)
 
-			_, err := ioutil.ReadAll(resp.Body)
+			body, err := ioutil.ReadAll(resp.Body)
 			assert.NoError(t, err)
+
+			assert.Equal(t, tc.wantStatus, resp.StatusCode,
+				fmt.Sprintf("Wrong status code (see above); body: %v", string(body)))
 		})
 	}
 }

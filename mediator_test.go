@@ -87,6 +87,7 @@ func TestSignupStarter(t *testing.T) {
 
 			assert.False(t, res.ConfirmationRateLimited)
 			assert.False(t, res.ConfirmationResent)
+			assert.False(t, res.MaxNumAttempts)
 			assert.True(t, res.NewSignup)
 
 			assert.Equal(t, 1, len(mailAPI.MessagesSent))
@@ -115,6 +116,7 @@ func TestSignupStarter(t *testing.T) {
 
 			assert.False(t, res.ConfirmationRateLimited)
 			assert.True(t, res.ConfirmationResent)
+			assert.False(t, res.MaxNumAttempts)
 			assert.False(t, res.NewSignup)
 
 			assert.Equal(t, 1, len(mailAPI.MessagesSent))
@@ -133,7 +135,7 @@ func TestSignupStarter(t *testing.T) {
                            (email, token, last_sent_at, completed_at)
                    VALUES
                            ($1, 'not-a-real-token', NOW() - '1 month'::interval, NOW())
-           `, testhelpers.TestEmail)
+           	`, testhelpers.TestEmail)
 			assert.NoError(t, err)
 
 			mailAPI := NewFakeMailAPI()
@@ -144,9 +146,11 @@ func TestSignupStarter(t *testing.T) {
 
 			assert.False(t, res.ConfirmationRateLimited)
 			assert.True(t, res.ConfirmationResent)
+			assert.False(t, res.MaxNumAttempts)
 			assert.False(t, res.NewSignup)
 
-			assert.Equal(t, 0, len(mailAPI.MessagesSent))
+			assert.Equal(t, 1, len(mailAPI.MessagesSent))
+			assert.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Email)
 		})
 	})
 
@@ -155,11 +159,11 @@ func TestSignupStarter(t *testing.T) {
 		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
 			// Manually insert a finished record
 			_, err := tx.Exec(`
-			INSERT INTO signup
-				(email, token, last_sent_at)
-			VALUES
-				($1, 'not-a-real-token', NOW() - '1 hour'::interval)
-		`, testhelpers.TestEmail)
+				INSERT INTO signup
+					(email, token, last_sent_at)
+				VALUES
+					($1, 'not-a-real-token', NOW() - '1 hour'::interval)
+			`, testhelpers.TestEmail)
 			assert.NoError(t, err)
 
 			mailAPI := NewFakeMailAPI()
@@ -170,9 +174,70 @@ func TestSignupStarter(t *testing.T) {
 
 			assert.True(t, res.ConfirmationRateLimited)
 			assert.False(t, res.ConfirmationResent)
+			assert.False(t, res.MaxNumAttempts)
 			assert.False(t, res.NewSignup)
 
 			assert.Equal(t, 0, len(mailAPI.MessagesSent))
+		})
+	})
+
+	// We've tried to send a confirmation email many times before, but it's
+	// never worked out so we give up.
+	t.Run("MaxNumAttempts", func(t *testing.T) {
+		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
+			// Manually insert a record at its maximum attempts
+			numAttempts := maxNumSignupAttempts
+			_, err := tx.Exec(`
+			  	INSERT INTO signup
+					  (email, token, num_attempts, last_sent_at)
+				  VALUES
+					  ($1, 'not-a-real-token', $2, NOW() - '1 month'::interval)
+		  	`, testhelpers.TestEmail, numAttempts)
+			assert.NoError(t, err)
+
+			mailAPI := NewFakeMailAPI()
+			mediator := signupStarter(mailAPI, testhelpers.TestEmail)
+
+			res, err := mediator.Run(tx)
+			assert.NoError(t, err)
+
+			assert.False(t, res.ConfirmationRateLimited)
+			assert.False(t, res.ConfirmationResent)
+			assert.True(t, res.MaxNumAttempts)
+			assert.False(t, res.NewSignup)
+
+			assert.Equal(t, 0, len(mailAPI.MessagesSent))
+		})
+	})
+
+	// The exception to the case above is if the user has already completed the
+	// signup flow. At that point, it doesn't matter what `num_attempts` is,
+	// we'll still resend.
+	t.Run("MaxNumAttemptsAlreadyCompleted", func(t *testing.T) {
+		testhelpers.WithTestTransaction(t, db, func(tx *sql.Tx) {
+			// Manually insert a record at its maximum attempts
+			numAttempts := maxNumSignupAttempts
+			_, err := tx.Exec(`
+			  	INSERT INTO signup
+					  (completed_at, email, token, num_attempts, last_sent_at)
+				  VALUES
+					  (NOW(), $1, 'not-a-real-token', $2, NOW() - '1 month'::interval)
+		  	`, testhelpers.TestEmail, numAttempts)
+			assert.NoError(t, err)
+
+			mailAPI := NewFakeMailAPI()
+			mediator := signupStarter(mailAPI, testhelpers.TestEmail)
+
+			res, err := mediator.Run(tx)
+			assert.NoError(t, err)
+
+			assert.False(t, res.ConfirmationRateLimited)
+			assert.True(t, res.ConfirmationResent)
+			assert.False(t, res.MaxNumAttempts)
+			assert.False(t, res.NewSignup)
+
+			assert.Equal(t, 1, len(mailAPI.MessagesSent))
+			assert.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Email)
 		})
 	})
 

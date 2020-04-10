@@ -71,7 +71,7 @@ jobs:
           PGDATABASE: postgres
 
       - name: "Raise database schema"
-        run: psql passages-signup-test < schema.sql
+        run: psql passages-signup-test < sql/schema.sql
         env:
           PGHOST: localhost
           PGPORT: ${{ job.services.postgres.ports[5432] }}

@@ -273,6 +273,8 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 		var res *SignupStarterResult
 		err = WithTransaction(db, func(tx *sql.Tx) error {
+			log.Printf("starting mediator ...")
+
 			mediator := &SignupStarter{
 				Email:   email,
 				MailAPI: getMailAPI(),
@@ -290,6 +292,8 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 		if res.ConfirmationRateLimited {
 			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", email, conf.newsletterName)
+		} else if res.MaxNumAttempts {
+			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've hit the maximum number of confirmation tries for this email address. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", conf.newsletterName)
 		} else {
 			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.</p>", email, conf.newsletterName)
 		}
@@ -382,6 +386,7 @@ func renderError(w http.ResponseWriter, status int, renderErr error) {
 func withErrorHandling(w http.ResponseWriter, fn func() error) {
 	err := fn()
 	if err != nil {
+		log.Printf("Internal server error: %v", err)
 		renderError(w, http.StatusInternalServerError, err)
 		return
 	}
