@@ -2,7 +2,8 @@
 # don't have to continually add new files here so that Docker ignores them.
 *
 !/*.go
-!/*.sql
+!/sql/*.sql
+!/sql/migrations/*.sql
 !/go.mod
 !/go.sum
 !/layouts/
