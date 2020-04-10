@@ -45,7 +45,9 @@ func WithTestTransaction(t *testing.T, db *sql.DB, fn func(*sql.Tx)) {
 
 	doRollback := func() {
 		err = tx.Rollback()
-		t.Logf("Error rolling back test transaction: %v", err)
+		if err != nil {
+			t.Logf("Error rolling back test transaction: %v", err)
+		}
 	}
 	doRollback()
 
