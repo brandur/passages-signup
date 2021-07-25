@@ -108,11 +108,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: "GCP: setup-gcloud"
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           export_default_credentials: true
           project_id: passages-signup
-          version: '285.0.0'
+          version: 'latest'
 
           # Getting a key is kind of insane and involves generating a JSON file
           # in the console, then base64 encoding it. See creating a a service account key here:
