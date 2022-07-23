@@ -3,13 +3,13 @@
 
 |
   Hello! I recently received a request to add this email address to the
-  _{{.newsletterName}}_ mailing list:
+  _{{.NewsletterMeta.Name}}_ mailing list:
 
       https://brandur.org/newsletter
 
   If you'd still like to join, please confirm by following this link:
 
-      {{.publicURL}}/confirm/{{.token}}
+      {{.PublicURL}}/confirm/{{.token}}
 
   If you received this email in error, it's safe to ignore it. By default you
   will stay unsubscribed.

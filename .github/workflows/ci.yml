@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
 
     services:
       postgres:
@@ -29,15 +29,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13.x
-
-      - name: Install Golint
-        run: go get -u golang.org/x/lint/golint
-
-      - name: Install tooling from Apt
-        # Postgres runs in a container, but we also need the client-side
-        # tooling.
-        run: sudo apt-get install postgresql-client
+          go-version: 1.18.x
 
       - name: 'Checkout'
         uses: actions/checkout@v2
@@ -80,7 +72,7 @@ jobs:
           PGDATABASE: postgres
 
       - name: "Go: Test"
-        run: go test -v
+        run: go test -v ./...
         env:
           PGHOST: localhost
           PGPORT: ${{ job.services.postgres.ports[5432] }}
@@ -94,9 +86,6 @@ jobs:
       - name: "Check: Gofmt"
         run: scripts/check_gofmt.sh
 
-      - name: "Check: Golint"
-        run: "$(go env GOPATH)/bin/golint -set_exit_status"
-
   deploy-google-cloud-run:
     if: github.ref == 'refs/heads/master'
     needs: build
@@ -107,24 +96,17 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v2
 
+      - name: "GCP: Auth"
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS_JSON }}'
+
       - name: "GCP: setup-gcloud"
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0
         with:
           export_default_credentials: true
           project_id: passages-signup
           version: 'latest'
-
-          # Getting a key is kind of insane and involves generating a JSON file
-          # in the console, then base64 encoding it. See creating a a service account key here:
-          #
-          #     https://cloud.google.com/iam/docs/creating-managing-service-account-keys
-          #
-          # Then getting the string itself will involve something like:
-          #
-          #     cat my-key.json | base64
-          #
-          service_account_email: ${{ secrets.GCPEmail }}
-          service_account_key: ${{ secrets.GCPKey }}
 
       - name: "GCP: gcloud info"
         run: gcloud info
@@ -137,6 +119,19 @@ jobs:
 
       - name: "GCP: Deploy passages-signup"
         run: gcloud run deploy --image gcr.io/passages-signup/passages-signup --platform managed --region us-central1 passages-signup
+
+  golangci-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: "Check: golangci-lint"
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.47
 
   image-push-docker-hub:
     if: github.ref == 'refs/heads/master'
