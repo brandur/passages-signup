@@ -25,7 +25,7 @@ ADD ./ $BUILD_DIR/
 # Build the project.
 WORKDIR $BUILD_DIR
 RUN ls -R .
-RUN go build -o passages-signup ./...
+RUN go build -o passages-signup .
 
 #
 # STAGE 2
