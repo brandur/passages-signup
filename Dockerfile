@@ -39,11 +39,8 @@ RUN apk --no-cache add ca-certificates
 ENV BUILD_DIR=/go/src/passages-signup
 
 COPY --from=builder $BUILD_DIR/passages-signup /
-COPY --from=builder $BUILD_DIR/layouts/ /layouts/
-COPY --from=builder $BUILD_DIR/public/ /public/
 COPY --from=builder $BUILD_DIR/sql/*.sql /
 COPY --from=builder $BUILD_DIR/sql/migrations/*.sql /
-COPY --from=builder $BUILD_DIR/views/ /views/
 
 ENV PORT 8082
 ENTRYPOINT ["/passages-signup"]

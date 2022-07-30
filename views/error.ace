@@ -1,5 +1,5 @@
 = content main
-  #passages {{.newsletterName}}
+  #passages {{.NewsletterMeta.Name}}
   p Unfortunately, an error occurred. If this problem persists, please email <strong>brandur@brandur.org</strong>.
   p
     strong Error:  

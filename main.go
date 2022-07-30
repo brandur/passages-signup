@@ -1,19 +1,30 @@
 package main
 
 import (
-	"database/sql"
+	"context"
+	"embed"
 	"fmt"
-	"log"
+	"io/fs"
 	"net/http"
+	"os"
 	"strings"
 
-	"github.com/brandur/csrf"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4"
 	"github.com/joeshaw/envdecode"
 	_ "github.com/lib/pq"
-	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/throttled/throttled"
 	"github.com/throttled/throttled/store/memstore"
+	"golang.org/x/xerrors"
+
+	"github.com/brandur/csrf"
+	"github.com/brandur/passages-signup/command"
+	"github.com/brandur/passages-signup/db"
+	"github.com/brandur/passages-signup/mailclient"
+	"github.com/brandur/passages-signup/newslettermeta"
+	"github.com/brandur/passages-signup/ptemplate"
 )
 
 const (
@@ -24,122 +35,164 @@ const (
 	replyToAddress = "brandur@brandur.org"
 )
 
+var validate = validator.New()
+
 // Conf contains configuration information for the command. It's extracted from
 // environment variables.
 type Conf struct {
-	// AssetsDir is the local directory out of which layouts, static content
-	// (images, stylesheets, etc.), and views will be served.
-	//
-	// Must have a trailing slash.
-	//
-	// Defaults to the current directory.
-	AssetsDir string `env:"ASSETS_DIR,default=./"`
-
-	// DatabaseMaxOpenConns is the maximum number of open database connections
-	// allowed.
-	DatabaseMaxOpenConns int `env:"DATABASE_MAX_OPEN_CONNS,default=5"`
+	// DatabaseTXStarter is a special value used to inject a test transaction to
+	// the server. Will be used instead of DatabaseURL if specified.
+	DatabaseTXStarter db.TXStarter `env:"-" validate:"required_without=DatabaseURL"`
 
 	// DatabaseURL is the URL to the Postgres database used to store program
 	// state.
-	DatabaseURL string `env:"DATABASE_URL,required"`
+	DatabaseURL string `env:"DATABASE_URL,required" validate:"required_without=DatabaseTXStarter"`
 
 	// EnableRateLimiter activates rate limiting on source IP to make it more
 	// difficult for attackers to burn through resource limits. It is on by
 	// default.
-	EnableRateLimiter bool `env:"ENABLE_RATE_LIMITER,default=true"`
+	EnableRateLimiter bool `env:"ENABLE_RATE_LIMITER,default=true" validate:"-"`
 
 	// MailgunAPIKey is a key for Mailgun used to send email.
-	MailgunAPIKey string `env:"MAILGUN_API_KEY,required"`
+	MailgunAPIKey string `env:"MAILGUN_API_KEY,required" validate:"required"`
 
 	// Newsletter is the newsletter to send. Should be either `nanoglyph` or
 	// `passages` and defaults to the latter. Along with one of the available
 	// values it should also be the identifier of the list in Mailgun.
-	NewsletterID NewsletterID `env:"NEWSLETTER_ID,default=passages"`
+	NewsletterID string `env:"NEWSLETTER_ID,default=passages" validate:"required"`
 
 	// PassagesEnv determines the running environment of the app. Set to
 	// development to disable template caching and CSRF protection.
-	PassagesEnv string `env:"PASSAGES_ENV,default=production"`
+	PassagesEnv string `env:"PASSAGES_ENV,default=production" validate:"required"`
 
 	// Port is the port over which to serve HTTP.
-	Port string `env:"PORT,default=5001"`
+	Port string `env:"PORT,default=5001" validate:"required"`
 
 	// PublicURL is the public location from which the site is being served.
 	// This is needed in some places to generate absolute URLs. Also used for
 	// CSRF protection.
-	PublicURL string `env:"PUBLIC_URL,default=https://passages-signup.herokuapp.com"`
-
-	// Some newsletter-specific properties that are set based off the value of Newsletter.
-	listAddress            string
-	newsletterName         NewsletterName
-	newsletterDescription  string // First paragraph: Shown on web + in Twitter card
-	newsletterDescription2 string // Second paragraph: Shown only on web
-	newsletterAboutPhoto   string
+	PublicURL string `env:"PUBLIC_URL,default=https://passages-signup.herokuapp.com" validate:"required"`
 }
 
-// NewsletterID identifies a newsletter and its values are used as options for
-// an incoming environmental variable.
-type NewsletterID string
+func (c *Conf) isProduction() bool {
+	return c.PassagesEnv == envProduction
+}
 
-// NewsletterName represents the name of a newsletter.
-type NewsletterName string
+var (
+	//go:embed public/*
+	embeddedAssets embed.FS
 
-const (
-	nanoglyphID           NewsletterID   = "nanoglyph"
-	nanoglyphName         NewsletterName = "Nanoglyph"
-	nanoglyphDescription  string         = `<em>` + string(nanoglyphName) + `</em> is a weekly newsletter about software, with a focus on simplicity and sustainability. It usually consists of a few links with editorial. It's written by <a href="https://brandur.org">brandur</a>.`
-	nanoglyphDescription2 string         = `Check out a <a href="https://brandur.org/nanoglyphs/006-moma-rain">sample edition</a>. Sign up above to have new ones delivered fresh to your inbox whenever they're published.`
-	nanoglyphAboutPhoto   string         = "Background photo is the <em>Blue Planet Sky</em> exhibit at the 21st Century Museum of Contemporary Art in Kanazawa, Japan. (And taken on a day that saw much more grey than blue.)"
-
-	passagesID           NewsletterID   = "passages"
-	passagesName         NewsletterName = "Passages & Glass"
-	passagesDescription  string         = `<em>` + string(passagesName) + `</em> is a personal newsletter about exploration, ideas, and software written by <a href="https://brandur.org">brandur</a>. It's sent rarely – just a few times a year.`
-	passagesDescription2 string         = `Check out a <a href="https://brandur.org/passages/003-koya">sample edition</a>. Sign up above to have new ones sent to you. Easily unsubscribe at any time with a single click.`
-	passagesAboutPhoto   string         = "Background photo is a distorted selection of wild California grass. Taken along Mission Creek in San Francisco."
+	//go:embed layouts/* views/*
+	embeddedTemplates embed.FS
 )
 
-var conf Conf
+type Server struct {
+	conf      *Conf
+	handler   http.Handler
+	mailAPI   mailclient.API
+	meta      *newslettermeta.Meta
+	renderer  *ptemplate.Renderer
+	txStarter db.TXStarter
+}
 
 func main() {
+	var conf Conf
 	err := envdecode.Decode(&conf)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatalf("Error decoding env configuration: %v", err)
 	}
 
-	switch conf.NewsletterID {
-	case nanoglyphID:
-		conf.newsletterName = nanoglyphName
-		conf.newsletterDescription = nanoglyphDescription
-		conf.newsletterDescription2 = nanoglyphDescription2
-		conf.newsletterAboutPhoto = nanoglyphAboutPhoto
-
-	case passagesID:
-		conf.newsletterName = passagesName
-		conf.newsletterDescription = passagesDescription
-		conf.newsletterDescription2 = passagesDescription2
-		conf.newsletterAboutPhoto = passagesAboutPhoto
-
-	default:
-		log.Fatalf("Unknown newsletter configuration (`NEWSLETTER_ID`): %s (should be either %s or %s)",
-			conf.NewsletterID, nanoglyphID, passagesID)
+	server, err := NewServer(&conf)
+	if err != nil {
+		logrus.Fatalf("Error initiaizing server: %v", err)
 	}
-	conf.listAddress = string(conf.NewsletterID) + "@" + mailDomain
+
+	if err := server.Start(); err != nil {
+		logrus.Fatalf("Error starting server: %v", err)
+	}
+}
+
+func NewServer(conf *Conf) (*Server, error) {
+	if err := validate.Struct(conf); err != nil {
+		return nil, xerrors.Errorf("error validating server config: %w", conf)
+	}
+
+	ctx := context.Background()
+
+	meta, err := newslettermeta.MetaFor(mailDomain, conf.NewsletterID)
+	if err != nil {
+		return nil, err
+	}
+
+	var mailAPI mailclient.API
+	if conf.PassagesEnv == envTesting {
+		mailAPI = mailclient.NewFakeClient()
+	} else {
+		mailAPI = mailclient.NewMailgunClient(mailDomain, conf.MailgunAPIKey)
+	}
+
+	// Use templates embedded with `go:embed` in production, but local
+	// filesystem otherwise so we can easily iterate in development.
+	var templates fs.FS
+	if conf.isProduction() {
+		templates = embeddedTemplates
+	} else {
+		templates = os.DirFS(".")
+	}
+
+	renderer, err := ptemplate.NewRenderer(&ptemplate.RendererConfig{
+		DynamicReload:  !conf.isProduction(),
+		NewsletterMeta: meta,
+		PublicURL:      conf.PublicURL,
+		Templates:      templates,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	txStarter := conf.DatabaseTXStarter
+	if txStarter == nil {
+		txStarter, err = db.Connect(ctx, &db.ConnectConfig{
+			ApplicationName: "passages-signup",
+			DatabaseURL:     conf.DatabaseURL,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	s := &Server{
+		conf:      conf,
+		mailAPI:   mailAPI,
+		meta:      meta,
+		renderer:  renderer,
+		txStarter: txStarter,
+	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", handleShow)
-	r.HandleFunc("/confirm/{token}", handleConfirm)
-	r.HandleFunc("/submit", handleSubmit)
+	r.HandleFunc("/", s.handleShow)
+	r.HandleFunc("/confirm/{token}", s.handleConfirm)
+	r.HandleFunc("/submit", s.handleSubmit)
 
-	if conf.PassagesEnv != envProduction {
-		r.HandleFunc("/messages/confirm", handleShowConfirmMessagePreview)
-		r.HandleFunc("/messages/confirm_plain", handleShowConfirmMessagePlainPreview)
+	// Easy message previews for development.
+	if !conf.isProduction() {
+		r.HandleFunc("/messages/confirm", s.handleShowConfirmMessagePreview)
+		r.HandleFunc("/messages/confirm_plain", s.handleShowConfirmMessagePlainPreview)
 	}
 
-	// Serves up static files found in public/
+	// In production serves assets that have been slurped up with go:embed. In
+	// other environments, reads directly from disk for reasy reloading.
+	var fileSystem http.FileSystem
+	if conf.isProduction() {
+		fileSystem = http.FS(embeddedAssets)
+	} else {
+		fileSystem = http.Dir("./public")
+	}
 	r.PathPrefix("/public/").Handler(
-		http.StripPrefix("/public/", http.FileServer(http.Dir(conf.AssetsDir+"/public"))),
+		http.StripPrefix("/public/", http.FileServer(fileSystem)),
 	)
 
-	var handler http.Handler = r
+	s.handler = r
 
 	options := []csrf.Option{
 		csrf.AllowedOrigin(conf.PublicURL),
@@ -149,101 +202,102 @@ func main() {
 		csrf.AllowedOrigin("https://brandur.org"),
 	}
 
-	if conf.PassagesEnv != envProduction {
-		log.Printf("Allowing localhost origin for non-production environment")
+	if !conf.isProduction() {
+		logrus.Infof("Allowing localhost origin for non-production environment")
 		options = append(options,
 			csrf.AllowedOrigin("http://localhost:"+conf.Port))
-
 	}
-	handler = csrf.Protect(options...)(handler)
+	s.handler = csrf.Protect(options...)(s.handler)
 
 	// Use a rate limiter to prevent enumeration of email addresses and so it's
 	// harder to maliciously burn through my Mailgun API limit.
 	if conf.EnableRateLimiter {
-		log.Printf("Enabling memory-backed rate limiting")
+		logrus.Infof("Enabling memory-backed rate limiting")
 		rateLimiter, err := getRateLimiter()
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
-		handler = rateLimiter.RateLimit(handler)
+		s.handler = rateLimiter.RateLimit(s.handler)
 	}
 
-	if conf.PassagesEnv == envProduction {
-		handler = redirectToHTTPS(handler)
+	if conf.isProduction() {
+		s.handler = redirectToHTTPS(s.handler)
 	}
 
-	log.Printf("Listening on port %v", conf.Port)
-	log.Fatal(http.ListenAndServe(":"+conf.Port, handler))
+	return s, nil
+}
+
+func (s *Server) Start() error {
+	logrus.Infof("Listening on port %v", s.conf.Port)
+	if err := http.ListenAndServe(":"+s.conf.Port, s.handler); err != nil {
+		return xerrors.Errorf("error listening on port %q: %w", s.conf.Port, err)
+	}
+	return nil
 }
 
 //
 // Handlers ---
 //
 
-func handleConfirm(w http.ResponseWriter, r *http.Request) {
-	withErrorHandling(w, func() error {
+func (s *Server) handleConfirm(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(w, func() error {
 		vars := mux.Vars(r)
 		token := vars["token"]
 
-		db, err := OpenDB()
-		if err != nil {
-			return err
-		}
-
-		var res *SignupFinisherResult
-		err = WithTransaction(db, func(tx *sql.Tx) error {
-			mediator := &SignupFinisher{
-				MailAPI: getMailAPI(),
-				Token:   token,
+		var res *command.SignupFinisherResult
+		err := db.WithTransaction(r.Context(), s.txStarter, func(ctx context.Context, tx pgx.Tx) error {
+			mediator := &command.SignupFinisher{
+				ListAddress: s.meta.ListAddress,
+				MailAPI:     s.mailAPI,
+				Token:       token,
 			}
 
 			var err error
-			res, err = mediator.Run(tx)
+			res, err = mediator.Run(r.Context(), tx)
 			return err
 		})
-
-		var message string
 		if err != nil {
-			return errors.Wrap(err, "Encountered a problem finishing signup")
+			return xerrors.Errorf("error finishing signup: %w", err)
 		}
 
+		var message string
 		if res.TokenNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			message = "We couldn't find that confirmation token."
 		} else {
-			message = fmt.Sprintf(`<p>You've been signed up successfully.</p><p>You'll receive your first edition of <em>%s</em> at <strong>%s</strong> the next time one is published.</p>`, conf.newsletterName, res.Email)
+			message = fmt.Sprintf(`<p>You've been signed up successfully.</p><p>You'll receive your first edition of <em>%s</em> at <strong>%s</strong> the next time one is published.</p>`, s.meta.Name, res.Email)
 		}
 
-		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
+		return s.renderer.RenderTemplate(w, "views/ok", map[string]interface{}{
 			"message": message,
-		}))
+		})
 	})
 }
 
-func handleShow(w http.ResponseWriter, r *http.Request) {
-	withErrorHandling(w, func() error {
-		return renderTemplate(w, conf.AssetsDir+"/views/show", getLocals(map[string]interface{}{}))
+func (s *Server) handleShow(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(w, func() error {
+		return s.renderer.RenderTemplate(w, "views/show", map[string]interface{}{})
 	})
 }
 
-func handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
-	withErrorHandling(w, func() error {
-		return renderTemplate(w, conf.AssetsDir+"/views/messages/confirm", getLocals(map[string]interface{}{
+func (s *Server) handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(w, func() error {
+		return s.renderer.RenderTemplate(w, "views/messages/confirm", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
-		}))
+		})
 	})
 }
 
-func handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
-	withErrorHandling(w, func() error {
-		return renderTemplate(w, conf.AssetsDir+"/views/messages/confirm_plain", getLocals(map[string]interface{}{
+func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(w, func() error {
+		return s.renderer.RenderTemplate(w, "views/messages/confirm_plain", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
-		}))
+		})
 	})
 }
 
-func handleSubmit(w http.ResponseWriter, r *http.Request) {
-	withErrorHandling(w, func() error {
+func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(w, func() error {
 		// Only accept form POSTs.
 		if r.Method != "POST" {
 			http.NotFound(w, r)
@@ -252,61 +306,80 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 
 		err := r.ParseForm()
 		if err != nil {
-			renderError(w, http.StatusBadRequest,
-				errors.Wrap(err, "Unable to parse input form"))
+			s.renderError(w, http.StatusBadRequest,
+				xerrors.Errorf("error parsing form input: %w", err))
 			return nil
 		}
 
 		email := r.Form.Get("email")
 		if email == "" {
-			renderError(w, http.StatusUnprocessableEntity,
-				fmt.Errorf("Expected input parameter email"))
+			s.renderError(w, http.StatusUnprocessableEntity,
+				xerrors.Errorf("expected input parameter email"))
 			return nil
 		}
 
 		email = strings.TrimSpace(email)
 
-		db, err := OpenDB()
-		if err != nil {
-			return err
-		}
+		var res *command.SignupStarterResult
+		err = db.WithTransaction(r.Context(), s.txStarter, func(ctx context.Context, tx pgx.Tx) error {
+			logrus.Infof("starting mediator ...")
 
-		var res *SignupStarterResult
-		err = WithTransaction(db, func(tx *sql.Tx) error {
-			log.Printf("starting mediator ...")
-
-			mediator := &SignupStarter{
-				Email:   email,
-				MailAPI: getMailAPI(),
+			mediator := &command.SignupStarter{
+				Email:          email,
+				ListAddress:    s.meta.ListAddress,
+				MailAPI:        s.mailAPI,
+				Renderer:       s.renderer,
+				ReplyToAddress: replyToAddress,
 			}
 
 			var err error
-			res, err = mediator.Run(tx)
+			res, err = mediator.Run(r.Context(), tx)
 			return err
 		})
 
 		var message string
 		if err != nil {
-			return errors.Wrap(err, "Encountered a problem sending a confirmation email")
+			return xerrors.Errorf("error sending confirmation email: %w", err)
 		}
 
-		if res.ConfirmationRateLimited {
-			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", email, conf.newsletterName)
-		} else if res.MaxNumAttempts {
-			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've hit the maximum number of confirmation tries for this email address. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", conf.newsletterName)
-		} else {
-			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.</p>", email, conf.newsletterName)
+		switch {
+		case res.ConfirmationRateLimited:
+			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I recently sent a confirmation email to <strong>%s</strong> and don't want to send another one so soon after. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", email, s.meta.Name)
+		case res.MaxNumAttempts:
+			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've hit the maximum number of confirmation tries for this email address. Please try to find the message and click the enclosed link to finish signing up for <em>%s</em>. If you can't find it, try checking your spam folder.</p>", s.meta.Name)
+		default:
+			message = fmt.Sprintf("<p>Thank you for signing up!</p><p>I've sent a confirmation email to <strong>%s</strong>. Please click the enclosed link to finish signing up for <em>%s</em>.</p>", email, s.meta.Name)
 		}
 
-		return renderTemplate(w, conf.AssetsDir+"/views/ok", getLocals(map[string]interface{}{
+		return s.renderer.RenderTemplate(w, "views/ok", map[string]interface{}{
 			"message": message,
-		}))
+		})
 	})
 }
 
 //
 // Private functions
 //
+
+func (s *Server) renderError(w http.ResponseWriter, status int, renderErr error) {
+	w.WriteHeader(status)
+
+	err := s.renderer.RenderTemplate(w, "views/error", map[string]interface{}{
+		"error": renderErr.Error(),
+	})
+	if err != nil {
+		// Hopefully it never comes to this
+		logrus.Infof("Error during error handling: %v", err)
+	}
+}
+
+func (s *Server) withErrorHandling(w http.ResponseWriter, fn func() error) {
+	if err := fn(); err != nil {
+		logrus.Infof("Internal server error: %v", err)
+		s.renderError(w, http.StatusInternalServerError, err)
+		return
+	}
+}
 
 func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 	// We use a memory store instead of something like Redis because for the
@@ -321,7 +394,7 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 	// leeway.
 	store, err := memstore.New(65536)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("error initializing memory store: %w", err)
 	}
 
 	quota := throttled.RateQuota{
@@ -331,11 +404,11 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 
 	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("error initializing rate limiter: %w", err)
 	}
 
 	deniedHandler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Rate limit exceeded. Sorry about that -- please try again in a few seconds.", 429)
+		http.Error(w, "Rate limit exceeded. Sorry about that -- please try again in a few seconds.", http.StatusTooManyRequests)
 	}))
 
 	// Vary based off of remote IP.
@@ -344,17 +417,6 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 		RateLimiter:   rateLimiter,
 		VaryBy:        &throttled.VaryBy{RemoteAddr: true},
 	}, nil
-}
-
-// getMailAPI gets a mailing API appropriate for the current environment. If
-// we're in testing, we create a fake API so that we never make any real calls
-// out to Mailgun.
-func getMailAPI() MailAPI {
-	if conf.PassagesEnv == envTesting {
-		return NewFakeMailAPI()
-	}
-
-	return NewMailgunAPI(mailDomain, conf.MailgunAPIKey)
 }
 
 func redirectToHTTPS(next http.Handler) http.Handler {
@@ -369,25 +431,4 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(res, req)
 	})
-}
-
-func renderError(w http.ResponseWriter, status int, renderErr error) {
-	w.WriteHeader(status)
-
-	err := renderTemplate(w, conf.AssetsDir+"/views/error", getLocals(map[string]interface{}{
-		"error": renderErr.Error(),
-	}))
-	if err != nil {
-		// Hopefully it never comes to this
-		log.Printf("Error during error handling: %v", err)
-	}
-}
-
-func withErrorHandling(w http.ResponseWriter, fn func() error) {
-	err := fn()
-	if err != nil {
-		log.Printf("Internal server error: %v", err)
-		renderError(w, http.StatusInternalServerError, err)
-		return
-	}
 }

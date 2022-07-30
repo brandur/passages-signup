@@ -4,14 +4,14 @@
 
 # Set in `terraform/terraform.tfvars`.
 variable "cloudflare_email" {}
-variable "cloudflare_token" {}
+variable "cloudflare_api_key" {}
 variable "database_url" {}
 variable "do_token" {}
 variable "mailgun_api_key" {}
 
 provider "cloudflare" {
-  email     = var.cloudflare_email
-  api_token = var.cloudflare_token
+  api_key = var.cloudflare_api_key
+  email   = var.cloudflare_email
 }
 
 provider "digitalocean" {

@@ -1,11 +1,11 @@
 = content main
-  #passages {{.newsletterName}}
+  #passages {{.NewsletterMeta.Name}}
   form method="post" action="/submit"
     input type="email" name="email" placeholder="Email"
     input type="submit" value="Sign up for newsletter"
   p#what What is this?
   #about
-    p {{HTML .newsletterDescription}}
-    p {{HTML .newsletterDescription2}}
+    p {{HTML .NewsletterMeta.Description}}
+    p {{HTML .NewsletterMeta.Description2}}
   #about-photo
-    p {{HTML .newsletterAboutPhoto}}
+    p {{HTML .NewsletterMeta.DescriptionAboutPhoto}}
