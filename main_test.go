@@ -39,6 +39,9 @@ func makeServer(t *testing.T, txStarter db.TXStarter, newsletterID string) *Serv
 	return s
 }
 
+func TestStaticAssets(t *testing.T) {
+}
+
 func TestHandleConfirm(t *testing.T) {
 	var (
 		ctx    context.Context

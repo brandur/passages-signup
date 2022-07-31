@@ -182,13 +182,7 @@ func NewServer(conf *Conf) (*Server, error) {
 
 	// In production serves assets that have been slurped up with go:embed. In
 	// other environments, reads directly from disk for reasy reloading.
-	var fileHandler http.Handler
-	if conf.isProduction() {
-		fileHandler = http.FileServer(http.FS(embeddedAssets))
-	} else {
-		fileHandler = http.StripPrefix("/public/", http.FileServer(http.Dir("./public")))
-	}
-	r.PathPrefix("/public/").Handler(fileHandler)
+	r.PathPrefix("/public/").Handler(staticAssetsHandler(conf.isProduction()))
 
 	s.handler = r
 
@@ -373,7 +367,7 @@ func (s *Server) renderError(w http.ResponseWriter, status int, renderErr error)
 
 func (s *Server) withErrorHandling(w http.ResponseWriter, fn func() error) {
 	if err := fn(); err != nil {
-		logrus.Infof("Internal server error: %v", err)
+		logrus.Errorf("Internal server error: %v", err)
 		s.renderError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -429,4 +423,12 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 
 		next.ServeHTTP(res, req)
 	})
+}
+
+func staticAssetsHandler(useEmbedded bool) http.Handler {
+	if useEmbedded {
+		return http.FileServer(http.FS(embeddedAssets))
+	}
+
+	return http.StripPrefix("/public/", http.FileServer(http.Dir("./public")))
 }

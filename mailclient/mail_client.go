@@ -142,11 +142,15 @@ func (a *MailgunClient) SendMessage(ctx context.Context, params *SendMessagePara
 	message.SetReplyTo(params.ReplyTo)
 
 	resp, _, err := a.mg.Send(ctx, message)
-	wrappedErr := xerrors.Errorf("error sending message: %w", err)
-	logrus.Infof(`Sent to: %s (response: "%s") (error: "%s")`,
-		params.Recipient, resp, wrappedErr)
+	if err != nil {
+		logrus.Errorf("Mailgun error while sending to %q (response: %q): %v",
+			params.Recipient, resp, err)
+		return xerrors.Errorf("error sending message: %w", err)
+	}
 
-	return wrappedErr
+	logrus.Infof(`Sent to: %q (response: %q)`, params.Recipient, resp)
+
+	return nil
 }
 
 //
