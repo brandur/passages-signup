@@ -100,8 +100,8 @@ jobs:
         uses: google-github-actions/auth@v0
         with:
           # credentials_json: '${{ secrets.GCP_CREDENTIALS_JSON }}'
-          workload_identity_provider: projects/158069613320/locations/global/workloadIdentityPools/github-actions-pool/providers/my-provider
-          service_account: google-cloud-run-deploy@passages-signup.iam.gserviceaccount.com
+          workload_identity_provider: 'projects/158069613320/locations/global/workloadIdentityPools/github-actions-pool/providers/my-provider'
+          service_account: 'google-cloud-run-deploy@passages-signup.iam.gserviceaccount.com'
 
       - name: "GCP: setup-gcloud"
         uses: google-github-actions/setup-gcloud@v0
