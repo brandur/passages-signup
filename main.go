@@ -182,15 +182,13 @@ func NewServer(conf *Conf) (*Server, error) {
 
 	// In production serves assets that have been slurped up with go:embed. In
 	// other environments, reads directly from disk for reasy reloading.
-	var fileSystem http.FileSystem
+	var fileHandler http.Handler
 	if conf.isProduction() {
-		fileSystem = http.FS(embeddedAssets)
+		fileHandler = http.FileServer(http.FS(embeddedAssets))
 	} else {
-		fileSystem = http.Dir("./public")
+		fileHandler = http.StripPrefix("/public/", http.FileServer(http.Dir("./public")))
 	}
-	r.PathPrefix("/public/").Handler(
-		http.StripPrefix("/public/", http.FileServer(fileSystem)),
-	)
+	r.PathPrefix("/public/").Handler(fileHandler)
 
 	s.handler = r
 
