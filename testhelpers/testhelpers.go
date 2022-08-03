@@ -36,7 +36,7 @@ func init() {
 // WithTestTransaction is similar to WithTransaction except that it always
 // rolls back the transaction. This is useful in test environments where we
 // want to discard all results within a single test case.
-func WithTestTransaction(ctx context.Context, t *testing.T, f func(ctx context.Context, tx pgx.Tx)) {
+func WithTestTransaction(ctx context.Context, t *testing.T, f func(tx pgx.Tx)) {
 	t.Helper()
 
 	logrus.Infof("Starting test transaction")
@@ -49,5 +49,5 @@ func WithTestTransaction(ctx context.Context, t *testing.T, f func(ctx context.C
 	}()
 
 	logrus.Infof("Running test body in test transaction")
-	f(ctx, tx)
+	f(tx)
 }

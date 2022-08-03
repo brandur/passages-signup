@@ -96,13 +96,15 @@ type Server struct {
 }
 
 func main() {
+	ctx := context.Background()
+
 	var conf Conf
 	err := envdecode.Decode(&conf)
 	if err != nil {
 		logrus.Fatalf("Error decoding env configuration: %v", err)
 	}
 
-	server, err := NewServer(&conf)
+	server, err := NewServer(ctx, &conf)
 	if err != nil {
 		logrus.Fatalf("Error initiaizing server: %v", err)
 	}
@@ -112,12 +114,10 @@ func main() {
 	}
 }
 
-func NewServer(conf *Conf) (*Server, error) {
+func NewServer(ctx context.Context, conf *Conf) (*Server, error) {
 	if err := validate.Struct(conf); err != nil {
 		return nil, xerrors.Errorf("error validating server config: %w", conf)
 	}
-
-	ctx := context.Background()
 
 	meta, err := newslettermeta.MetaFor(mailDomain, conf.NewsletterID)
 	if err != nil {
@@ -245,7 +245,7 @@ func (s *Server) handleConfirm(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var err error
-			res, err = mediator.Run(r.Context(), tx)
+			res, err = mediator.Run(ctx, tx)
 			return err
 		})
 		if err != nil {
@@ -325,7 +325,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var err error
-			res, err = mediator.Run(r.Context(), tx)
+			res, err = mediator.Run(ctx, tx)
 			return err
 		})
 
