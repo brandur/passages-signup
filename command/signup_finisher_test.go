@@ -16,7 +16,7 @@ func TestSignupFinisher(t *testing.T) {
 
 	// Normal signup finish
 	t.Run("FinishSignup", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			token := "test-token"
 
 			// Manually insert a record ready to be finished
@@ -60,7 +60,7 @@ func TestSignupFinisher(t *testing.T) {
 
 	// Unknown token
 	t.Run("UnknownToken", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			mailAPI := mailclient.NewFakeClient()
 			mediator := signupFinisher(mailAPI, "not-a-token")
 

@@ -20,10 +20,10 @@ import (
 	"github.com/brandur/passages-signup/testhelpers"
 )
 
-func makeServer(t *testing.T, txStarter db.TXStarter, newsletterID string) *Server {
+func makeServer(ctx context.Context, t *testing.T, txStarter db.TXStarter, newsletterID string) *Server {
 	t.Helper()
 
-	s, err := NewServer(&Conf{
+	s, err := NewServer(ctx, &Conf{
 		DatabaseTXStarter: txStarter,
 		MailgunAPIKey:     "fake-key",
 		NewsletterID:      newsletterID,
@@ -54,10 +54,10 @@ func TestHandleConfirm(t *testing.T) {
 	setup := func(test func(*testing.T)) func(*testing.T) {
 		return func(t *testing.T) {
 			t.Helper()
+			ctx = context.Background()
 
-			testhelpers.WithTestTransaction(context.Background(), t, func(testCtx context.Context, testTx pgx.Tx) {
-				ctx = testCtx
-				server = makeServer(t, testTx, newslettermeta.PassagesID)
+			testhelpers.WithTestTransaction(ctx, t, func(testTx pgx.Tx) {
+				server = makeServer(ctx, t, testTx, newslettermeta.PassagesID)
 				token = "test-token"
 				tx = testTx
 
@@ -118,8 +118,9 @@ func TestHandleConfirm(t *testing.T) {
 	}))
 }
 
-func TestHandleShow_DifferentNewsletters(t *testing.T) { // nolint:nosnakecase
+func TestHandleShow_DifferentNewsletters(t *testing.T) {
 	var (
+		ctx    context.Context
 		server *Server
 		tx     pgx.Tx
 	)
@@ -127,8 +128,9 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) { // nolint:nosnakecase
 	setup := func(test func(*testing.T)) func(*testing.T) {
 		return func(t *testing.T) {
 			t.Helper()
+			ctx = context.Background()
 
-			testhelpers.WithTestTransaction(context.Background(), t, func(testCtx context.Context, testTx pgx.Tx) {
+			testhelpers.WithTestTransaction(ctx, t, func(testTx pgx.Tx) {
 				tx = testTx
 
 				test(t)
@@ -137,7 +139,7 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) { // nolint:nosnakecase
 	}
 
 	t.Run("NanoglyphSuccess", setup(func(t *testing.T) { // nolint:thelper
-		server = makeServer(t, tx, newslettermeta.NanoglyphID)
+		server = makeServer(ctx, t, tx, newslettermeta.NanoglyphID)
 
 		req := httptest.NewRequest("GET", "/", nil)
 		w := httptest.NewRecorder()
@@ -152,7 +154,7 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) { // nolint:nosnakecase
 	}))
 
 	t.Run("PassagesSuccess", setup(func(t *testing.T) { // nolint:thelper
-		server = makeServer(t, tx, newslettermeta.PassagesID)
+		server = makeServer(ctx, t, tx, newslettermeta.PassagesID)
 
 		req := httptest.NewRequest("GET", "/", nil)
 		w := httptest.NewRecorder()
@@ -168,14 +170,18 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) { // nolint:nosnakecase
 }
 
 func TestHandleSubmit(t *testing.T) {
-	var server *Server
+	var (
+		ctx    context.Context
+		server *Server
+	)
 
 	setup := func(test func(*testing.T)) func(*testing.T) {
 		return func(t *testing.T) {
 			t.Helper()
+			ctx = context.Background()
 
-			testhelpers.WithTestTransaction(context.Background(), t, func(testCtx context.Context, testTx pgx.Tx) {
-				server = makeServer(t, testTx, newslettermeta.PassagesID)
+			testhelpers.WithTestTransaction(ctx, t, func(testTx pgx.Tx) {
+				server = makeServer(ctx, t, testTx, newslettermeta.PassagesID)
 
 				test(t)
 			})

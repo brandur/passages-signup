@@ -16,7 +16,7 @@ func TestSignupStarter(t *testing.T) {
 
 	// New signup
 	t.Run("NewSignup", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			mailAPI := mailclient.NewFakeClient()
 			mediator := signupStarter(mailAPI, testhelpers.TestEmail)
 
@@ -35,7 +35,7 @@ func TestSignupStarter(t *testing.T) {
 
 	// Email already in progress, but with signup not completed
 	t.Run("ConfirmationResent", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			// Manually insert a finished record
 			_, err := tx.Exec(ctx, `
 			INSERT INTO signup
@@ -64,7 +64,7 @@ func TestSignupStarter(t *testing.T) {
 	// Email that's already subscribed (behaves identially to the case of
 	// signup not completed above)
 	t.Run("AlreadySubscribed", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			// Manually insert a finished record
 			_, err := tx.Exec(ctx, `
                    INSERT INTO signup
@@ -92,7 +92,7 @@ func TestSignupStarter(t *testing.T) {
 
 	// Email already in progress, but too soon after last attempt
 	t.Run("ConfirmationRateLimited", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			// Manually insert a finished record
 			_, err := tx.Exec(ctx, `
 				INSERT INTO signup
@@ -120,7 +120,7 @@ func TestSignupStarter(t *testing.T) {
 	// We've tried to send a confirmation email many times before, but it's
 	// never worked out so we give up.
 	t.Run("MaxNumAttempts", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			// Manually insert a record at its maximum attempts
 			numAttempts := maxNumSignupAttempts
 			_, err := tx.Exec(ctx, `
@@ -150,7 +150,7 @@ func TestSignupStarter(t *testing.T) {
 	// signup flow. At that point, it doesn't matter what `num_attempts` is,
 	// we'll still resend.
 	t.Run("MaxNumAttemptsAlreadyCompleted", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			// Manually insert a record at its maximum attempts
 			numAttempts := maxNumSignupAttempts
 			_, err := tx.Exec(ctx, `
@@ -179,7 +179,7 @@ func TestSignupStarter(t *testing.T) {
 
 	// Invalid email address
 	t.Run("InvalidEmail", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(ctx context.Context, tx pgx.Tx) {
+		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
 			mailAPI := mailclient.NewFakeClient()
 			mediator := signupStarter(mailAPI, "blah-not-an-email")
 
