@@ -131,7 +131,7 @@ jobs:
       - name: "Check: golangci-lint"
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.47
+          version: v1.48
 
   image-push-docker-hub:
     if: github.ref == 'refs/heads/master'

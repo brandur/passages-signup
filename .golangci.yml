@@ -27,6 +27,7 @@ linters:
 
     # deprecated
     - golint
+    - ifshort
     - interfacer
     - maligned
     - scopelint
