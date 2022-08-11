@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -70,7 +69,7 @@ func TestHandleConfirm(t *testing.T) {
 		}
 	}
 
-	t.Run("FinishSignup", setup(func(t *testing.T) { // nolint:thelper
+	t.Run("FinishSignup", setup(func(t *testing.T) { //nolint:thelper
 		// Manually insert a record ready to be finished
 		_, err := tx.Exec(ctx, `
 			INSERT INTO signup
@@ -81,14 +80,14 @@ func TestHandleConfirm(t *testing.T) {
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/confirm/"+token, nil)
+		req := httptest.NewRequest(http.MethodGet, "/confirm/"+token, nil)
 		router.ServeHTTP(w, req)
 
 		resp := w.Result()
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		_, err = ioutil.ReadAll(resp.Body)
+		_, err = io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		// Verify that the process has successfully transition the row's
@@ -104,16 +103,16 @@ func TestHandleConfirm(t *testing.T) {
 		require.NotNil(t, completedAt)
 	}))
 
-	t.Run("UnknownToken", setup(func(t *testing.T) { // nolint:thelper
+	t.Run("UnknownToken", setup(func(t *testing.T) { //nolint:thelper
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/confirm/"+token, nil)
+		req := httptest.NewRequest(http.MethodGet, "/confirm/"+token, nil)
 		router.ServeHTTP(w, req)
 
 		resp := w.Result()
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusNotFound, resp.StatusCode)
 
-		_, err := ioutil.ReadAll(resp.Body)
+		_, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 	}))
 }
@@ -138,10 +137,10 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) {
 		}
 	}
 
-	t.Run("NanoglyphSuccess", setup(func(t *testing.T) { // nolint:thelper
+	t.Run("NanoglyphSuccess", setup(func(t *testing.T) { //nolint:thelper
 		server = makeServer(ctx, t, tx, newslettermeta.NanoglyphID)
 
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 		server.handleShow(w, req)
 
@@ -149,14 +148,14 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) {
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		_, err := ioutil.ReadAll(resp.Body)
+		_, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 	}))
 
-	t.Run("PassagesSuccess", setup(func(t *testing.T) { // nolint:thelper
+	t.Run("PassagesSuccess", setup(func(t *testing.T) { //nolint:thelper
 		server = makeServer(ctx, t, tx, newslettermeta.PassagesID)
 
-		req := httptest.NewRequest("GET", "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 		server.handleShow(w, req)
 
@@ -164,7 +163,7 @@ func TestHandleShow_DifferentNewsletters(t *testing.T) {
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		_, err := ioutil.ReadAll(resp.Body)
+		_, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 	}))
 }
@@ -214,7 +213,7 @@ func TestHandleSubmit(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, setup(func(t *testing.T) { // nolint:thelper
+		t.Run(tc.name, setup(func(t *testing.T) { //nolint:thelper
 			req := httptest.NewRequest(tc.verb, tc.path, tc.body)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			w := httptest.NewRecorder()
@@ -223,7 +222,7 @@ func TestHandleSubmit(t *testing.T) {
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			require.Equal(t, tc.wantStatus, resp.StatusCode,
