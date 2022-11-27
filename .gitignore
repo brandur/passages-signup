@@ -2,6 +2,7 @@
 .env
 .envrc
 passages-signup
+/dbops_SENSITIVE
 /deploy/terraform/*.tfstate
 /deploy/terraform/*.tfstate.backup
 /deploy/terraform/*.tfvars
