@@ -23,6 +23,7 @@ import (
 	"github.com/brandur/passages-signup/command"
 	"github.com/brandur/passages-signup/db"
 	"github.com/brandur/passages-signup/mailclient"
+	"github.com/brandur/passages-signup/middleware"
 	"github.com/brandur/passages-signup/newslettermeta"
 	"github.com/brandur/passages-signup/ptemplate"
 )
@@ -55,6 +56,12 @@ type Conf struct {
 
 	// MailgunAPIKey is a key for Mailgun used to send email.
 	MailgunAPIKey string `env:"MAILGUN_API_KEY,required" validate:"required"`
+
+	// MaintenanceMode activates "maintenance mode" in which the service will be
+	// unavailable until maintenance mode has been turned back off again. This
+	// is intended for use for the very most invasive operational work, like if
+	// the main database needs to be migrated to another provider.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
 
 	// Newsletter is the newsletter to send. Should be either `nanoglyph` or
 	// `passages` and defaults to the latter. Along with one of the available
@@ -170,19 +177,27 @@ func NewServer(ctx context.Context, conf *Conf) (*Server, error) {
 	}
 
 	r := mux.NewRouter()
+
+	// Keep static assets on a clean router so that they can be served even in
+	// maintenance mode.
+	//
+	// In production serves assets that have been slurped up with go:embed. In
+	// other environments, reads directly from disk for reasy reloading.
+	r.PathPrefix("/public/").Handler(staticAssetsHandler(conf.isProduction()))
+
+	r = r.NewRoute().Subrouter()
+	r.Use(middleware.NewMaintenanceModeMiddleware(conf.MaintenanceMode, renderer).Wrapper)
+
 	r.HandleFunc("/", s.handleShow)
 	r.HandleFunc("/confirm/{token}", s.handleConfirm)
 	r.HandleFunc("/submit", s.handleSubmit)
 
 	// Easy message previews for development.
 	if !conf.isProduction() {
-		r.HandleFunc("/messages/confirm", s.handleShowConfirmMessagePreview)
-		r.HandleFunc("/messages/confirm_plain", s.handleShowConfirmMessagePlainPreview)
+		r.HandleFunc("/dev/messages/confirm", s.handleShowConfirmMessagePreview)
+		r.HandleFunc("/dev/messages/confirm_plain", s.handleShowConfirmMessagePlainPreview)
+		r.HandleFunc("/dev/maintenance", s.handleShowMaintenance)
 	}
-
-	// In production serves assets that have been slurped up with go:embed. In
-	// other environments, reads directly from disk for reasy reloading.
-	r.PathPrefix("/public/").Handler(staticAssetsHandler(conf.isProduction()))
 
 	s.handler = r
 
@@ -285,6 +300,12 @@ func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *
 		return s.renderer.RenderTemplate(w, "views/messages/confirm_plain", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		})
+	})
+}
+
+func (s *Server) handleShowMaintenance(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(w, func() error {
+		return s.renderer.RenderTemplate(w, "views/maintenance", map[string]interface{}{})
 	})
 }
 
