@@ -1,5 +1,8 @@
 name: passages-signup CI
 
+env:
+  GO_VERSION: 1.19
+
 on:
   pull_request:
   push:
@@ -27,12 +30,13 @@ jobs:
 
     steps:
       - name: Install Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.18.x
+          check-latest: true
+          go-version: ${{ env.GO_VERSION }}
 
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Debug
         run: |
@@ -41,14 +45,6 @@ jobs:
           echo "pwd=$(pwd)"
           echo "HOME=${HOME}"
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-
-      - name: "Cache Go modules"
-        uses: actions/cache@v1
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: "Go: Install"
         run: go install
@@ -94,7 +90,7 @@ jobs:
 
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "GCP: Auth"
         uses: google-github-actions/auth@v0
@@ -126,10 +122,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Check: golangci-lint"
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
           version: v1.48
 
