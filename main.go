@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
 	"github.com/joeshaw/envdecode"
@@ -185,18 +186,18 @@ func NewServer(ctx context.Context, conf *Conf) (*Server, error) {
 	// other environments, reads directly from disk for reasy reloading.
 	r.PathPrefix("/public/").Handler(staticAssetsHandler(conf.isProduction()))
 
-	r = r.NewRoute().Subrouter()
-	r.Use(middleware.NewMaintenanceModeMiddleware(conf.MaintenanceMode, renderer).Wrapper)
+	innerRouter := r.NewRoute().Subrouter()
+	innerRouter.Use(middleware.NewMaintenanceModeMiddleware(conf.MaintenanceMode, renderer).Wrapper)
 
-	r.HandleFunc("/", s.handleShow)
-	r.HandleFunc("/confirm/{token}", s.handleConfirm)
-	r.HandleFunc("/submit", s.handleSubmit)
+	innerRouter.HandleFunc("/", s.handleShow)
+	innerRouter.HandleFunc("/confirm/{token}", s.handleConfirm)
+	innerRouter.HandleFunc("/submit", s.handleSubmit)
 
 	// Easy message previews for development.
 	if !conf.isProduction() {
-		r.HandleFunc("/dev/messages/confirm", s.handleShowConfirmMessagePreview)
-		r.HandleFunc("/dev/messages/confirm_plain", s.handleShowConfirmMessagePlainPreview)
-		r.HandleFunc("/dev/maintenance", s.handleShowMaintenance)
+		innerRouter.HandleFunc("/dev/messages/confirm", s.handleShowConfirmMessagePreview)
+		innerRouter.HandleFunc("/dev/messages/confirm_plain", s.handleShowConfirmMessagePlainPreview)
+		innerRouter.HandleFunc("/dev/maintenance", s.handleShowMaintenance)
 	}
 
 	s.handler = r
@@ -447,9 +448,12 @@ func redirectToHTTPS(next http.Handler) http.Handler {
 }
 
 func staticAssetsHandler(useEmbedded bool) http.Handler {
+	var handler http.Handler
 	if useEmbedded {
-		return http.FileServer(http.FS(embeddedAssets))
+		handler = http.FileServer(http.FS(embeddedAssets))
+	} else {
+		handler = http.StripPrefix("/public/", http.FileServer(http.Dir("./public")))
 	}
-
-	return http.StripPrefix("/public/", http.FileServer(http.Dir("./public")))
+	fmt.Printf("adding loggin handler, embedded = %v ...\n", useEmbedded)
+	return handlers.CombinedLoggingHandler(os.Stdout, handler)
 }

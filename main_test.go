@@ -39,6 +39,39 @@ func makeServer(ctx context.Context, t *testing.T, txStarter db.TXStarter, newsl
 }
 
 func TestStaticAssets(t *testing.T) {
+	setup := func(test func(*testing.T)) func(*testing.T) {
+		return func(t *testing.T) {
+			t.Helper()
+			test(t)
+		}
+	}
+
+	// Wraps the handler in a mux router for a more realistic simulation.
+	wrapHandler := func(handler http.Handler) http.Handler {
+		r := mux.NewRouter()
+		r.PathPrefix("/public/").Handler(handler)
+		return r
+	}
+
+	t.Run("Disk", setup(func(t *testing.T) { //nolint:thelper
+		handler := wrapHandler(staticAssetsHandler(false))
+
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/public/tiny-preload-image.png", nil)
+		handler.ServeHTTP(recorder, req)
+
+		requireStatusOrPrintBody(t, http.StatusOK, recorder)
+	}))
+
+	t.Run("Embedded", setup(func(t *testing.T) { //nolint:thelper
+		handler := wrapHandler(staticAssetsHandler(true))
+
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/public/tiny-preload-image.png", nil)
+		handler.ServeHTTP(recorder, req)
+
+		requireStatusOrPrintBody(t, http.StatusOK, recorder)
+	}))
 }
 
 func TestHandleConfirm(t *testing.T) {
@@ -229,4 +262,15 @@ func TestHandleSubmit(t *testing.T) {
 				fmt.Sprintf("Wrong status code (see above); body: %v", string(body)))
 		}))
 	}
+}
+
+func requireStatusOrPrintBody(t *testing.T, expectedStatusCode int, recorder *httptest.ResponseRecorder) {
+	t.Helper()
+	//nolint:bodyclose
+	require.Equal(t, expectedStatusCode, recorder.Result().StatusCode,
+		"Expected status %v, but got %v; body was: %s",
+		expectedStatusCode,
+		recorder.Result().StatusCode,
+		recorder.Body.String(),
+	)
 }
