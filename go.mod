@@ -7,6 +7,7 @@ require (
 	github.com/brandur/csrf v0.1.0
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/joeshaw/envdecode v0.0.0-20200121155833-099f1fc765bd
@@ -30,7 +31,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
@@ -47,6 +47,6 @@ require (
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/net v0.0.0-20220728211354-c7608f3a8462 // indirect
 	golang.org/x/sys v0.0.0-20220730100132-1609e554cd39 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
