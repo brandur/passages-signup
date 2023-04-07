@@ -69,14 +69,14 @@ func NewFakeClient() *FakeClient {
 }
 
 // AddMember adds a new member to a mailing list.
-func (a *FakeClient) AddMember(ctx context.Context, list, email string) error {
+func (a *FakeClient) AddMember(_ context.Context, list, email string) error {
 	a.MembersAdded = append(a.MembersAdded,
 		&FakeClientAPIMemberAdded{list, email})
 	return nil
 }
 
 // SendMessage sends a message an email address.
-func (a *FakeClient) SendMessage(ctx context.Context, params *SendMessageParams) error {
+func (a *FakeClient) SendMessage(_ context.Context, params *SendMessageParams) error {
 	if err := validate.Struct(params); err != nil {
 		return xerrors.Errorf("error validating params: %w", err)
 	}

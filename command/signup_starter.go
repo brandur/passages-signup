@@ -188,7 +188,7 @@ func (c *SignupStarter) sendConfirmationMessage(ctx context.Context, token strin
 		return xerrors.Errorf("error inlining CSS styling: %w", err)
 	}
 
-	return c.MailAPI.SendMessage(ctx, &mailclient.SendMessageParams{ //nolint:wrapcheck
+	return c.MailAPI.SendMessage(ctx, &mailclient.SendMessageParams{
 		ContentsHTML:   confirmHTML,
 		ContentsPlain:  confirmPlain,
 		ListAddress:    c.ListAddress,

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/handlers"
@@ -237,7 +238,13 @@ func NewServer(ctx context.Context, conf *Conf) (*Server, error) {
 
 func (s *Server) Start() error {
 	logrus.Infof("Listening on port %v", s.conf.Port)
-	if err := http.ListenAndServe(":"+s.conf.Port, s.handler); err != nil {
+
+	server := &http.Server{
+		Addr:              ":" + s.conf.Port,
+		Handler:           s.handler,
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+	if err := server.ListenAndServe(); err != nil {
 		return xerrors.Errorf("error listening on port %q: %w", s.conf.Port, err)
 	}
 	return nil
@@ -282,13 +289,13 @@ func (s *Server) handleConfirm(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleShow(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleShow(w http.ResponseWriter, _ *http.Request) {
 	s.withErrorHandling(w, func() error {
 		return s.renderer.RenderTemplate(w, "views/show", map[string]interface{}{})
 	})
 }
 
-func (s *Server) handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleShowConfirmMessagePreview(w http.ResponseWriter, _ *http.Request) {
 	s.withErrorHandling(w, func() error {
 		return s.renderer.RenderTemplate(w, "views/messages/confirm", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
@@ -296,7 +303,7 @@ func (s *Server) handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.
 	})
 }
 
-func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, _ *http.Request) {
 	s.withErrorHandling(w, func() error {
 		return s.renderer.RenderTemplate(w, "views/messages/confirm_plain", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
@@ -304,7 +311,7 @@ func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *
 	})
 }
 
-func (s *Server) handleShowMaintenance(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleShowMaintenance(w http.ResponseWriter, _ *http.Request) {
 	s.withErrorHandling(w, func() error {
 		return s.renderer.RenderTemplate(w, "views/maintenance", map[string]interface{}{})
 	})
@@ -313,7 +320,7 @@ func (s *Server) handleShowMaintenance(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	s.withErrorHandling(w, func() error {
 		// Only accept form POSTs.
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			http.NotFound(w, r)
 			return nil
 		}
