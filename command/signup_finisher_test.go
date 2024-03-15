@@ -38,7 +38,7 @@ func TestSignupFinisher(t *testing.T) {
 			require.True(t, res.SignupFinished)
 			require.False(t, res.TokenNotFound)
 
-			require.Equal(t, 1, len(mailAPI.MembersAdded))
+			require.Len(t, mailAPI.MembersAdded, 1)
 			require.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[0].Email)
 
 			//
@@ -53,7 +53,7 @@ func TestSignupFinisher(t *testing.T) {
 			require.True(t, res.SignupFinished)
 			require.False(t, res.TokenNotFound)
 
-			require.Equal(t, 2, len(mailAPI.MembersAdded))
+			require.Len(t, mailAPI.MembersAdded, 2)
 			require.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[1].Email)
 		})
 	})
@@ -71,7 +71,7 @@ func TestSignupFinisher(t *testing.T) {
 			require.False(t, res.SignupFinished)
 			require.True(t, res.TokenNotFound)
 
-			require.Equal(t, 0, len(mailAPI.MembersAdded))
+			require.Empty(t, len(mailAPI.MembersAdded))
 		})
 	})
 }

@@ -22,7 +22,7 @@ func TestMaintenanceModeMiddlewareWrapper(t *testing.T) {
 		return func(t *testing.T) {
 			t.Helper()
 
-			handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				_, _ = w.Write([]byte("ok."))
 			})
 

@@ -28,7 +28,7 @@ func TestSignupStarter(t *testing.T) {
 			require.False(t, res.MaxNumAttempts)
 			require.True(t, res.NewSignup)
 
-			require.Equal(t, 1, len(mailAPI.MessagesSent))
+			require.Len(t, mailAPI.MessagesSent, 1)
 			require.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Recipient)
 		})
 	})
@@ -56,7 +56,7 @@ func TestSignupStarter(t *testing.T) {
 			require.False(t, res.MaxNumAttempts)
 			require.False(t, res.NewSignup)
 
-			require.Equal(t, 1, len(mailAPI.MessagesSent))
+			require.Len(t, mailAPI.MessagesSent, 1)
 			require.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Recipient)
 		})
 	})
@@ -85,7 +85,7 @@ func TestSignupStarter(t *testing.T) {
 			require.False(t, res.MaxNumAttempts)
 			require.False(t, res.NewSignup)
 
-			require.Equal(t, 1, len(mailAPI.MessagesSent))
+			require.Len(t, mailAPI.MessagesSent, 1)
 			require.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Recipient)
 		})
 	})
@@ -113,7 +113,7 @@ func TestSignupStarter(t *testing.T) {
 			require.False(t, res.MaxNumAttempts)
 			require.False(t, res.NewSignup)
 
-			require.Equal(t, 0, len(mailAPI.MessagesSent))
+			require.Empty(t, mailAPI.MessagesSent)
 		})
 	})
 
@@ -142,7 +142,7 @@ func TestSignupStarter(t *testing.T) {
 			require.True(t, res.MaxNumAttempts)
 			require.False(t, res.NewSignup)
 
-			require.Equal(t, 0, len(mailAPI.MessagesSent))
+			require.Empty(t, mailAPI.MessagesSent)
 		})
 	})
 
@@ -172,7 +172,7 @@ func TestSignupStarter(t *testing.T) {
 			require.False(t, res.MaxNumAttempts)
 			require.False(t, res.NewSignup)
 
-			require.Equal(t, 1, len(mailAPI.MessagesSent))
+			require.Len(t, mailAPI.MessagesSent, 1)
 			require.Equal(t, testhelpers.TestEmail, mailAPI.MessagesSent[0].Recipient)
 		})
 	})
@@ -184,7 +184,7 @@ func TestSignupStarter(t *testing.T) {
 			mediator := signupStarter(mailAPI, "blah-not-an-email")
 
 			_, err := mediator.Run(ctx, tx)
-			require.Error(t, ErrInvalidEmail, err)
+			require.ErrorIs(t, err, ErrInvalidEmail)
 		})
 	})
 }
