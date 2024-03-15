@@ -1,6 +1,6 @@
 module github.com/brandur/passages-signup
 
-go 1.19
+go 1.22
 
 require (
 	github.com/aymerick/douceur v0.2.0
