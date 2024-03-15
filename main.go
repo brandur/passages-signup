@@ -428,7 +428,7 @@ func getRateLimiter() (*throttled.HTTPRateLimiter, error) {
 		return nil, xerrors.Errorf("error initializing rate limiter: %w", err)
 	}
 
-	deniedHandler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	deniedHandler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "Rate limit exceeded. Sorry about that -- please try again in a few seconds.", http.StatusTooManyRequests)
 	}))
 
