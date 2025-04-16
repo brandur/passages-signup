@@ -1,11 +1,10 @@
 name: passages-signup CI
 
-env:
-  GO_VERSION: 1.22
-
 on:
   pull_request:
   push:
+    branches:
+      - master
   schedule:
     # once a day at 08:00
     - cron: "0 8 * * *"
@@ -29,14 +28,14 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install Go
         uses: actions/setup-go@v5
         with:
           check-latest: true
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: "Checkout"
-        uses: actions/checkout@v4
+          go-version-file: "go.mod"
 
       - name: Debug
         run: |
@@ -121,19 +120,19 @@ jobs:
     timeout-minutes: 3
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install Go
         uses: actions/setup-go@v5
         with:
           check-latest: true
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: "go.mod"
 
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: "Check: golangci-lint"
-        uses: golangci/golangci-lint-action@v3
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.56
+          version: v2.0.0
 
   image-push-docker-hub:
     if: github.ref == 'refs/heads/master'
@@ -152,42 +151,43 @@ jobs:
           username: ${{ secrets.DockerHubUsername }}
           password: ${{ secrets.DockerHubPassword }}
 
-  terraform:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  # Terraform broke its API. Commented out until I can go back and fix things.
+  # terraform:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
 
-    steps:
-      - name: "Checkout"
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: "Checkout"
+  #       uses: actions/checkout@v4
 
-      - name: "Copy .tfvars"
-        run: cp ./deploy/terraform/terraform.tfvars.sample ./deploy/terraform/terraform.tfvars
+  #     - name: "Copy .tfvars"
+  #       run: cp ./deploy/terraform/terraform.tfvars.sample ./deploy/terraform/terraform.tfvars
 
-      - name: "Terraform: Format"
-        uses: hashicorp/terraform-github-actions@master
-        with:
-          tf_actions_version: "latest"
-          tf_actions_subcommand: "fmt"
-          tf_actions_working_dir: "./deploy/terraform"
+  #     - name: "Terraform: Format"
+  #       uses: hashicorp/terraform-github-actions@master
+  #       with:
+  #         tf_actions_version: "latest"
+  #         tf_actions_subcommand: "fmt"
+  #         tf_actions_working_dir: "./deploy/terraform"
 
-      - name: "Terraform: Init"
-        uses: hashicorp/terraform-github-actions@master
-        with:
-          tf_actions_version: "latest"
-          tf_actions_subcommand: "init"
-          tf_actions_working_dir: "./deploy/terraform"
+  #     - name: "Terraform: Init"
+  #       uses: hashicorp/terraform-github-actions@master
+  #       with:
+  #         tf_actions_version: "latest"
+  #         tf_actions_subcommand: "init"
+  #         tf_actions_working_dir: "./deploy/terraform"
 
-      - name: "Terraform: Validate"
-        uses: hashicorp/terraform-github-actions@master
-        with:
-          tf_actions_version: "latest"
-          tf_actions_subcommand: "validate"
-          tf_actions_working_dir: "./deploy/terraform"
+  #     - name: "Terraform: Validate"
+  #       uses: hashicorp/terraform-github-actions@master
+  #       with:
+  #         tf_actions_version: "latest"
+  #         tf_actions_subcommand: "validate"
+  #         tf_actions_working_dir: "./deploy/terraform"
 
-      # Requires working CloudFlare/Digital Ocean keys.
-      # - name: "Terraform Plan"
-      #   uses: hashicorp/terraform-github-actions@master
-      #   with:
-      #     tf_actions_version: "latest"
-      #     tf_actions_subcommand: "plan"
-      #     tf_actions_working_dir: "./deploy/terraform"
+  #     # Requires working CloudFlare/Digital Ocean keys.
+  #     # - name: "Terraform Plan"
+  #     #   uses: hashicorp/terraform-github-actions@master
+  #     #   with:
+  #     #     tf_actions_version: "latest"
+  #     #     tf_actions_subcommand: "plan"
+  #     #     tf_actions_working_dir: "./deploy/terraform"

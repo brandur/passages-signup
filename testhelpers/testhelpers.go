@@ -33,21 +33,24 @@ func init() {
 	}
 }
 
-// WithTestTransaction is similar to WithTransaction except that it always
-// rolls back the transaction. This is useful in test environments where we
-// want to discard all results within a single test case.
-func WithTestTransaction(ctx context.Context, t *testing.T, f func(tx pgx.Tx)) {
-	t.Helper()
+// TestTx returns a test transaction that's automatically rolled back on test
+// cleanup. Targets the main database.
+func TestTx(ctx context.Context, tb testing.TB) pgx.Tx { //nolint:ireturn
+	tb.Helper()
 
-	logrus.Infof("Starting test transaction")
 	tx, err := dbPool.Begin(ctx)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 
-	defer func() {
+	tb.Cleanup(func() {
+		// Tests inherit context from `t.Context()` which is cancelled after
+		// tests run and before calling clean up. We need a non-cancelled
+		// context to issue rollback here, so use a bit of a bludgeon to do so
+		// with `context.WithoutCancel()`.
+		ctx := context.WithoutCancel(ctx)
+
 		err := tx.Rollback(ctx)
-		require.NoError(t, err)
-	}()
+		require.NoError(tb, err)
+	})
 
-	logrus.Infof("Running test body in test transaction")
-	f(tx)
+	return tx
 }
