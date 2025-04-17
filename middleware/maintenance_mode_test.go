@@ -46,7 +46,7 @@ func TestMaintenanceModeMiddlewareWrapper(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "https://example.com", nil)
 		handler.ServeHTTP(recorder, req)
 
-		res := recorder.Result() //nolint:bodyclose
+		res := recorder.Result()
 		require.Equal(t, http.StatusServiceUnavailable, res.StatusCode)
 
 		data := recorder.Body.Bytes()
@@ -66,7 +66,7 @@ func TestMaintenanceModeMiddlewareWrapper(t *testing.T) {
 
 func requireStatusOrPrintBody(t *testing.T, expectedStatusCode int, recorder *httptest.ResponseRecorder) {
 	t.Helper()
-	//nolint:bodyclose
+
 	require.Equal(t, expectedStatusCode, recorder.Result().StatusCode,
 		"Expected status %v, but got %v; body was: %s",
 		expectedStatusCode,

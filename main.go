@@ -255,12 +255,12 @@ func (s *Server) Start() error {
 //
 
 func (s *Server) handleConfirm(w http.ResponseWriter, r *http.Request) {
-	s.withErrorHandling(w, func() error {
+	s.withErrorHandling(r.Context(), w, func(ctx context.Context) error {
 		vars := mux.Vars(r)
 		token := vars["token"]
 
 		var res *command.SignupFinisherResult
-		err := db.WithTransaction(r.Context(), s.txStarter, func(ctx context.Context, tx pgx.Tx) error {
+		err := db.WithTransaction(ctx, s.txStarter, func(ctx context.Context, tx pgx.Tx) error {
 			mediator := &command.SignupFinisher{
 				ListAddress: s.meta.ListAddress,
 				MailAPI:     s.mailAPI,
@@ -289,36 +289,36 @@ func (s *Server) handleConfirm(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleShow(w http.ResponseWriter, _ *http.Request) {
-	s.withErrorHandling(w, func() error {
+func (s *Server) handleShow(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(r.Context(), w, func(_ context.Context) error {
 		return s.renderer.RenderTemplate(w, "views/show", map[string]interface{}{})
 	})
 }
 
-func (s *Server) handleShowConfirmMessagePreview(w http.ResponseWriter, _ *http.Request) {
-	s.withErrorHandling(w, func() error {
+func (s *Server) handleShowConfirmMessagePreview(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(r.Context(), w, func(_ context.Context) error {
 		return s.renderer.RenderTemplate(w, "views/messages/confirm", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		})
 	})
 }
 
-func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, _ *http.Request) {
-	s.withErrorHandling(w, func() error {
+func (s *Server) handleShowConfirmMessagePlainPreview(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(r.Context(), w, func(_ context.Context) error {
 		return s.renderer.RenderTemplate(w, "views/messages/confirm_plain", map[string]interface{}{
 			"token": "bc492bd9-2aea-458a-aea1-cd7861c334d1",
 		})
 	})
 }
 
-func (s *Server) handleShowMaintenance(w http.ResponseWriter, _ *http.Request) {
-	s.withErrorHandling(w, func() error {
+func (s *Server) handleShowMaintenance(w http.ResponseWriter, r *http.Request) {
+	s.withErrorHandling(r.Context(), w, func(_ context.Context) error {
 		return s.renderer.RenderTemplate(w, "views/maintenance", map[string]interface{}{})
 	})
 }
 
 func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
-	s.withErrorHandling(w, func() error {
+	s.withErrorHandling(r.Context(), w, func(ctx context.Context) error {
 		// Only accept form POSTs.
 		if r.Method != http.MethodPost {
 			http.NotFound(w, r)
@@ -342,7 +342,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		email = strings.TrimSpace(email)
 
 		var res *command.SignupStarterResult
-		err = db.WithTransaction(r.Context(), s.txStarter, func(ctx context.Context, tx pgx.Tx) error {
+		err = db.WithTransaction(ctx, s.txStarter, func(ctx context.Context, tx pgx.Tx) error {
 			logrus.Infof("starting mediator ...")
 
 			mediator := &command.SignupStarter{
@@ -394,8 +394,8 @@ func (s *Server) renderError(w http.ResponseWriter, status int, renderErr error)
 	}
 }
 
-func (s *Server) withErrorHandling(w http.ResponseWriter, fn func() error) {
-	if err := fn(); err != nil {
+func (s *Server) withErrorHandling(ctx context.Context, w http.ResponseWriter, fn func(context.Context) error) {
+	if err := fn(ctx); err != nil {
 		logrus.Errorf("Internal server error: %v", err)
 		s.renderError(w, http.StatusInternalServerError, err)
 		return

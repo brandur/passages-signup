@@ -32,7 +32,7 @@ func (m *MaintenanceModeMiddleware) Wrapper(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			if err := m.renderer.RenderTemplate(w, "views/maintenance", map[string]interface{}{}); err != nil {
 				logrus.Errorf("Error rendering maintenance mode: %v", err)
-				_, _ = w.Write([]byte(fmt.Sprintf("Error rendering maintenance mode: %v", err)))
+				_, _ = fmt.Fprintf(w, "Error rendering maintenance mode: %v", err)
 			}
 			return
 		}

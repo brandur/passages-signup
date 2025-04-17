@@ -1,10 +1,8 @@
 package command
 
 import (
-	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/require"
 
 	"github.com/brandur/passages-signup/mailclient"
@@ -12,67 +10,67 @@ import (
 )
 
 func TestSignupFinisher(t *testing.T) {
-	ctx := context.Background()
+	const token = "test-token"
+
+	ctx := t.Context()
 
 	// Normal signup finish
 	t.Run("FinishSignup", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
-			token := "test-token"
+		tx := testhelpers.TestTx(ctx, t)
 
-			// Manually insert a record ready to be finished
-			_, err := tx.Exec(ctx, `
+		// Manually insert a record ready to be finished
+		_, err := tx.Exec(ctx, `
 				INSERT INTO signup
 					(email, token)
 				VALUES
 					($1, $2)
 			`, testhelpers.TestEmail, token)
-			require.NoError(t, err)
+		require.NoError(t, err)
 
-			mailAPI := mailclient.NewFakeClient()
-			mediator := signupFinisher(mailAPI, token)
+		mailAPI := mailclient.NewFakeClient()
+		mediator := signupFinisher(mailAPI, token)
 
-			res, err := mediator.Run(ctx, tx)
-			require.NoError(t, err)
+		res, err := mediator.Run(ctx, tx)
+		require.NoError(t, err)
 
-			require.Equal(t, testhelpers.TestEmail, res.Email)
-			require.True(t, res.SignupFinished)
-			require.False(t, res.TokenNotFound)
+		require.Equal(t, testhelpers.TestEmail, res.Email)
+		require.True(t, res.SignupFinished)
+		require.False(t, res.TokenNotFound)
 
-			require.Len(t, mailAPI.MembersAdded, 1)
-			require.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[0].Email)
+		require.Len(t, mailAPI.MembersAdded, 1)
+		require.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[0].Email)
 
-			//
-			// Make sure it's idempotent by running it immediately again with the
-			// same inputs
-			//
+		//
+		// Make sure it's idempotent by running it immediately again with the
+		// same inputs
+		//
 
-			res, err = mediator.Run(ctx, tx)
-			require.NoError(t, err)
+		res, err = mediator.Run(ctx, tx)
+		require.NoError(t, err)
 
-			require.Equal(t, testhelpers.TestEmail, res.Email)
-			require.True(t, res.SignupFinished)
-			require.False(t, res.TokenNotFound)
+		require.Equal(t, testhelpers.TestEmail, res.Email)
+		require.True(t, res.SignupFinished)
+		require.False(t, res.TokenNotFound)
 
-			require.Len(t, mailAPI.MembersAdded, 2)
-			require.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[1].Email)
-		})
+		require.Len(t, mailAPI.MembersAdded, 2)
+		require.Equal(t, testhelpers.TestEmail, mailAPI.MembersAdded[1].Email)
 	})
 
 	// Unknown token
 	t.Run("UnknownToken", func(t *testing.T) {
-		testhelpers.WithTestTransaction(ctx, t, func(tx pgx.Tx) {
-			mailAPI := mailclient.NewFakeClient()
-			mediator := signupFinisher(mailAPI, "not-a-token")
+		tx := testhelpers.TestTx(ctx, t)
 
-			res, err := mediator.Run(ctx, tx)
-			require.NoError(t, err)
+		mailAPI := mailclient.NewFakeClient()
+		mediator := signupFinisher(mailAPI, "not-a-token")
 
-			require.Empty(t, res.Email)
-			require.False(t, res.SignupFinished)
-			require.True(t, res.TokenNotFound)
+		res, err := mediator.Run(ctx, tx)
+		require.NoError(t, err)
 
-			require.Empty(t, len(mailAPI.MembersAdded))
-		})
+		require.Empty(t, res.Email)
+		require.False(t, res.SignupFinished)
+		require.True(t, res.TokenNotFound)
+
+		require.Empty(t, mailAPI.MembersAdded)
 	})
 }
 
