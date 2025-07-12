@@ -11,37 +11,25 @@
 
 FROM golang:alpine AS builder
 
+COPY ./ ./
+
 RUN go version
+RUN pwd
 
-# The Go Alpine image gets an automatic `$GOPATH` of `/go`, which we know in
-# advance and are going to take advantage of here.
-ENV BUILD_DIR=/go/src/passages-signup
-
-# Add source code. Note that `.dockerignore` will take care of excluding the
-# vast majority of files in the current directory and just bring in the couple
-# core files that we need.
-ADD ./ $BUILD_DIR/
-
-# Build the project.
-WORKDIR $BUILD_DIR
-RUN ls -R .
 RUN go build -o passages-signup .
+
+RUN du -sh passages-signup
 
 #
 # STAGE 2
 #
-# Use a tiny base image (alpine) and copy in the release target. This produces
-# a very small output image for deployment.
+# Use a tiny base image (Distroless) and copy in the release target. This
+# produces a very small output image for deployment.
 #
 
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
+FROM gcr.io/distroless/static-debian12:latest
 
-ENV BUILD_DIR=/go/src/passages-signup
+COPY --from=builder /go/passages-signup /
 
-COPY --from=builder $BUILD_DIR/passages-signup /
-COPY --from=builder $BUILD_DIR/sql/*.sql /
-COPY --from=builder $BUILD_DIR/sql/migrations/*.sql /
-
-ENV PORT 8082
+ENV PORT=8082
 ENTRYPOINT ["/passages-signup"]
