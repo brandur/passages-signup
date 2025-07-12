@@ -16,7 +16,14 @@ COPY ./ ./
 RUN go version
 RUN pwd
 
-RUN go build -o passages-signup .
+# ldflags are flags for the Go linker, documented here:
+#
+#     https://pkg.go.dev/cmd/link
+#
+# `-s` and `-w` omit the symbol table and debugging information (`-s`) and the
+# DWARF symbol table (`-w`), which substantially reduces the sizes of output
+# binaries.
+RUN go build -ldflags='-s -w' -o passages-signup .
 
 RUN du -sh passages-signup
 
