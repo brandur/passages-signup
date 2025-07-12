@@ -81,6 +81,17 @@ jobs:
       - name: "Check: Gofmt"
         run: scripts/check_gofmt.sh
 
+  container-image-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker build
+        run: docker build .
+
   deploy-google-cloud-run:
     if: github.ref == 'refs/heads/master'
     needs: build
