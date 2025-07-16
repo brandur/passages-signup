@@ -234,7 +234,7 @@ func TestHandleSubmit(t *testing.T) {
 		{
 			"Renders",
 			"POST", "/submit",
-			bytes.NewBufferString("email=brandur@example.com"),
+			bytes.NewBufferString("email=brandur@example.com&" + reallySimpleProtectionName + "=" + reallySimpleProtectionValue),
 			http.StatusOK,
 		},
 		{
@@ -247,6 +247,12 @@ func TestHandleSubmit(t *testing.T) {
 			"RequiresEmail",
 			"POST", "/submit",
 			nil,
+			http.StatusUnprocessableEntity,
+		},
+		{
+			"RequiresReallySimpleProtection",
+			"POST", "/submit",
+			bytes.NewBufferString("email=brandur@example.com"),
 			http.StatusUnprocessableEntity,
 		},
 	}

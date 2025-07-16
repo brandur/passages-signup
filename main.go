@@ -291,7 +291,10 @@ func (s *Server) handleConfirm(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleShow(w http.ResponseWriter, r *http.Request) {
 	s.withErrorHandling(r.Context(), w, func(_ context.Context) error {
-		return s.renderer.RenderTemplate(w, "views/show", map[string]interface{}{})
+		return s.renderer.RenderTemplate(w, "views/show", map[string]interface{}{
+			"ReallySimpleProtectionName":  reallySimpleProtectionName,
+			"ReallySimpleProtectionValue": reallySimpleProtectionValue,
+		})
 	})
 }
 
@@ -317,6 +320,11 @@ func (s *Server) handleShowMaintenance(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+const (
+	reallySimpleProtectionName  = "really_simple_protection"
+	reallySimpleProtectionValue = "The wheel turns."
+)
+
 func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	s.withErrorHandling(r.Context(), w, func(ctx context.Context) error {
 		// Only accept form POSTs.
@@ -336,6 +344,11 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		if email == "" {
 			s.renderError(w, http.StatusUnprocessableEntity,
 				xerrors.Errorf("expected input parameter email"))
+			return nil
+		}
+
+		if r.Form.Get(reallySimpleProtectionName) != reallySimpleProtectionValue {
+			s.renderError(w, http.StatusUnprocessableEntity, xerrors.New("invalid form input; are you human?"))
 			return nil
 		}
 

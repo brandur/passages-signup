@@ -20,7 +20,7 @@ psql passages-signup < sql/schema.sql
 
 # open `.envrc`; edit MAILGUN_API_KEY
 
-go install && $(go env GOPATH)/bin/passages-signup
+go run .
 ```
 
 Open your browser to [localhost:5001](http://localhost:5001).
