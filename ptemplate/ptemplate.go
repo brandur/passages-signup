@@ -26,6 +26,7 @@ type RendererConfig struct {
 
 type Renderer struct {
 	*RendererConfig
+
 	layoutPath string
 }
 

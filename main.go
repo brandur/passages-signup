@@ -21,7 +21,6 @@ import (
 	"github.com/throttled/throttled/store/memstore"
 	"golang.org/x/xerrors"
 
-	"github.com/brandur/csrf"
 	"github.com/brandur/passages-signup/command"
 	"github.com/brandur/passages-signup/db"
 	"github.com/brandur/passages-signup/mailclient"
@@ -200,23 +199,28 @@ func NewServer(ctx context.Context, conf *Conf) (*Server, error) {
 		innerRouter.HandleFunc("/dev/messages/confirm_plain", s.handleShowConfirmMessagePlainPreview)
 		innerRouter.HandleFunc("/dev/maintenance", s.handleShowMaintenance)
 	}
-
 	s.handler = r
 
-	options := []csrf.Option{
-		csrf.AllowedOrigin(conf.PublicURL),
+	csrfProtection := http.NewCrossOriginProtection()
+	if err := csrfProtection.AddTrustedOrigin(conf.PublicURL); err != nil {
+		return nil, xerrors.Errorf("error adding trusted origin: %w", err)
+	}
 
-		// And also allow the special origin from `brandur.org` which will
-		// cross-post to this app.
-		csrf.AllowedOrigin("https://brandur.org"),
+	// And also allow the special origin from `brandur.org` which will
+	// cross-post to this app.
+	if err := csrfProtection.AddTrustedOrigin("https://brandur.org"); err != nil {
+		return nil, xerrors.Errorf("error adding trusted origin: %w", err)
 	}
 
 	if !conf.isProduction() {
 		logrus.Infof("Allowing localhost origin for non-production environment")
-		options = append(options,
-			csrf.AllowedOrigin("http://localhost:"+conf.Port))
+		err := csrfProtection.AddTrustedOrigin("http://localhost:" + conf.Port)
+		if err != nil {
+			return nil, xerrors.Errorf("error adding trusted origin: %w", err)
+		}
 	}
-	s.handler = csrf.Protect(options...)(s.handler)
+
+	s.handler = csrfProtection.Handler(s.handler)
 
 	// Use a rate limiter to prevent enumeration of email addresses and so it's
 	// harder to maliciously burn through my Mailgun API limit.
@@ -474,6 +478,5 @@ func staticAssetsHandler(useEmbedded bool) http.Handler {
 	} else {
 		handler = http.StripPrefix("/public/", http.FileServer(http.Dir("./public")))
 	}
-	fmt.Printf("adding loggin handler, embedded = %v ...\n", useEmbedded)
 	return handlers.CombinedLoggingHandler(os.Stdout, handler)
 }
