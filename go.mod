@@ -2,11 +2,8 @@ module github.com/brandur/passages-signup
 
 go 1.25.0
 
-toolchain go1.24.1
-
 require (
 	github.com/aymerick/douceur v0.2.0
-	github.com/brandur/csrf v0.1.0
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
@@ -16,7 +13,7 @@ require (
 	github.com/lib/pq v1.10.6
 	github.com/mailgun/mailgun-go/v3 v3.6.4
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.1
 	github.com/stretchr/testify v1.8.1
 	github.com/throttled/throttled v2.2.5+incompatible
 	github.com/yosssi/ace v0.0.5
