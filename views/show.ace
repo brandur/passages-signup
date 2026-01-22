@@ -2,8 +2,8 @@
   #passages {{.NewsletterMeta.Name}}
   form method="post" action="/submit"
     input type="email" name="email" placeholder="Email"
-    input type="hidden" name="really_simple_protection" value="The wheel turns."
-    input type={{.ReallySimpleProtectionName}} value={{.ReallySimpleProtectionValue}}
+    input type="hidden" name={{.ReallySimpleProtectionName}} value={{.ReallySimpleProtectionValue}}
+    input type="submit" value="Sign up for newsletter"
   p#what What is this?
   #about
     p {{HTML .NewsletterMeta.Description}}
